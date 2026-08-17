@@ -1,0 +1,56 @@
+# ---------------------------------------------------------------------------
+# COMPETITION-LICENSED MATERIAL — MUST NOT BE REDISTRIBUTED
+#
+# The PTCG battle engine ("ptcgProgram" / cabt Engine), the card data, and the
+# episode replays are covered by LicenseRef-PTCG-ABC-Competition-Use-Only:
+#   "This package is shared only for taking part in the competition, and is not
+#    open-source software. Please use it just to build and test your entries,
+#    don't share or republish it, and delete it when the competition ends."
+# Everything in this block is deliberately excluded from version control.
+# ---------------------------------------------------------------------------
+data/
+engine_build/
+pokemon-tcg-ai-battle.zip
+
+# compiled engine (libcg.dylib / cg.dll) — one copy ships in every agent dir
+cg/
+**/cg/
+*.dylib
+*.dll
+*.so
+
+# episode replays: competition match data (~12 GB)
+episodes/
+
+# submission bundles — these tarballs contain the engine binary
+runs/*.tar.gz
+
+# ---------------------------------------------------------------------------
+# Large / derived artifacts (regenerable; keep the code, not the outputs)
+# ---------------------------------------------------------------------------
+# neural net checkpoints (AlphaZero policy/value heads, 2.7-10 MB each)
+*.pt
+*.pth
+
+# training datasets (self-play + mined episode tensors)
+train/data/
+
+# scratch experiment logs
+scratch_logs/
+
+# ---------------------------------------------------------------------------
+# Python
+# ---------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# ---------------------------------------------------------------------------
+# Local state / credentials (belt and braces — none are committed today)
+# ---------------------------------------------------------------------------
+.env
+kaggle.json
+*.pem
+.DS_Store

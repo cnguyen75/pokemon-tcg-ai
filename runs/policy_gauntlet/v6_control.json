@@ -1,0 +1,38 @@
+{
+ "tag": "v6_control",
+ "agent": "/Users/colin/Documents/pokemon-tcg-ai/baselines/v6",
+ "target_per": 320,
+ "opps": {
+  "grimmsnarl": {
+   "w": 45,
+   "l": 35,
+   "d": 0,
+   "weight": 0.427
+  },
+  "alakazam": {
+   "w": 49,
+   "l": 31,
+   "d": 0,
+   "weight": 0.283
+  },
+  "cynthia_garchomp": {
+   "w": 58,
+   "l": 22,
+   "d": 0,
+   "weight": 0.123
+  },
+  "mirror(v6)": {
+   "w": 20,
+   "l": 20,
+   "d": 0,
+   "weight": 0.11
+  },
+  "lucario": {
+   "w": 18,
+   "l": 22,
+   "d": 0,
+   "weight": 0.057
+  }
+ },
+ "elapsed": 290.13935685157776
+}

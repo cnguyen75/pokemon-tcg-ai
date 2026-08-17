@@ -1,0 +1,4 @@
+v11 vs fw_archaludon: 79-125 (38.7%) CI[32.3,45.6] 204g 296s
+v11 vs fw_archaludon: 69-135 (33.8%) CI[27.7,40.6] 204g 293s
+v12_arch vs fw_archaludon: 76-128 (37.3%) CI[30.9,44.1] 204g 277s
+v12_arch vs fw_archaludon: 60-144 (29.4%) CI[23.6,36.0] 204g 305s

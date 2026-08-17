@@ -1,0 +1,38 @@
+{
+ "tag": "policy_topk2",
+ "agent": "/Users/colin/Documents/pokemon-tcg-ai/agent2",
+ "target_per": 320,
+ "opps": {
+  "grimmsnarl": {
+   "w": 34,
+   "l": 46,
+   "d": 0,
+   "weight": 0.427
+  },
+  "alakazam": {
+   "w": 21,
+   "l": 19,
+   "d": 0,
+   "weight": 0.283
+  },
+  "cynthia_garchomp": {
+   "w": 26,
+   "l": 14,
+   "d": 0,
+   "weight": 0.123
+  },
+  "mirror(v6)": {
+   "w": 20,
+   "l": 20,
+   "d": 0,
+   "weight": 0.11
+  },
+  "lucario": {
+   "w": 21,
+   "l": 19,
+   "d": 0,
+   "weight": 0.057
+  }
+ },
+ "elapsed": 280.45096802711487
+}

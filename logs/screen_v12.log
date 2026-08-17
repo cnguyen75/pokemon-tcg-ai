@@ -1,0 +1,33 @@
+Installed 11 packages in 423ms
+DECK v11: hammer=4 cape=1 ball=1 boss=2 stretcher=2 judge=2 total=60
+DECK v12a: hammer=0 cape=2 ball=2 boss=3 stretcher=3 judge=2 total=60
+DECK v12b: hammer=2 cape=2 ball=2 boss=2 stretcher=2 judge=2 total=60
+v11   vs archaludon: 63-141 (30.9%) CI[24.9,37.5]  204g 309s
+v11   vs lucario   : 87-117 (42.6%) CI[36.1,49.5]  204g 143s
+multiprocessing.pool.RemoteTraceback: 
+"""
+Traceback (most recent call last):
+  File "/Users/colin/.local/share/uv/python/cpython-3.13.10-macos-aarch64-none/lib/python3.13/multiprocessing/pool.py", line 125, in worker
+    result = (True, func(*args, **kwds))
+                    ~~~~^^^^^^^^^^^^^^^
+  File "/Users/colin/.local/share/uv/python/cpython-3.13.10-macos-aarch64-none/lib/python3.13/multiprocessing/pool.py", line 48, in mapstar
+    return list(map(*args))
+  File "/Users/colin/Documents/pokemon-tcg-ai/tools/league.py", line 63, in play_games
+    raise RuntimeError(f"deck error p{start.errorPlayer} t{start.errorType}")
+RuntimeError: deck error p0 t4
+"""
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/colin/Documents/pokemon-tcg-ai/tools/screen_v12.py", line 69, in <module>
+    main()
+    ~~~~^^
+  File "/Users/colin/Documents/pokemon-tcg-ai/tools/screen_v12.py", line 56, in main
+    outs = pool.map(play_games, jobs)
+  File "/Users/colin/.local/share/uv/python/cpython-3.13.10-macos-aarch64-none/lib/python3.13/multiprocessing/pool.py", line 367, in map
+    return self._map_async(func, iterable, mapstar, chunksize).get()
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/colin/.local/share/uv/python/cpython-3.13.10-macos-aarch64-none/lib/python3.13/multiprocessing/pool.py", line 774, in get
+    raise self._value
+RuntimeError: deck error p0 t4

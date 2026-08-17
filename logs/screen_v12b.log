@@ -1,0 +1,7 @@
+DECK v12a: hammer=0 cape=1 ball=2 boss=3 stretcher=3 judge=2 total=60
+DECK v12b: hammer=2 cape=1 ball=2 boss=2 stretcher=2 judge=2 total=60
+v12a  vs archaludon: 65-139 (31.9%) CI[25.9,38.5]  204g 335s
+v12a  vs lucario   : 98-106 (48.0%) CI[41.3,54.9]  204g 149s
+v12b  vs archaludon: 59-145 (28.9%) CI[23.1,35.5]  204g 339s
+v12b  vs lucario   : 101-103 (49.5%) CI[42.7,56.3]  204g 151s
+SCREEN_DONE
