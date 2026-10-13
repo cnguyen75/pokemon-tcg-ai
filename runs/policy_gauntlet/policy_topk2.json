@@ -1,6 +1,6 @@
 {
  "tag": "policy_topk2",
- "agent": "/Users/colin/Documents/pokemon-tcg-ai/agent2",
+ "agent": "agent2",
  "target_per": 320,
  "opps": {
   "grimmsnarl": {

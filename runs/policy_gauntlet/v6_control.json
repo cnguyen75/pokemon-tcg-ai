@@ -1,6 +1,6 @@
 {
  "tag": "v6_control",
- "agent": "/Users/colin/Documents/pokemon-tcg-ai/baselines/v6",
+ "agent": "baselines/v6",
  "target_per": 320,
  "opps": {
   "grimmsnarl": {
