@@ -1,131 +1,172 @@
-# Pokémon TCG AI Battle Challenge — competition agent
+# Pokémon TCG AI Battle Challenge agent
 
-An agent for the Kaggle [PTCG AI Battle Challenge Simulation](https://www.kaggle.com/competitions/pokemon-tcg-ai-battle)
-(July–August 2026): a two-player Pokémon Trading Card Game simulator with hidden
-information, where entries play a continuously-running TrueSkill ladder against
-other competitors' agents.
+An agent for Kaggle's [PTCG AI Battle Challenge Simulation](https://www.kaggle.com/competitions/pokemon-tcg-ai-battle)
+(July–August 2026). Bots play the Pokémon Trading Card Game against each other
+on a live TrueSkill ladder. The game has hidden information (the opponent's
+hand and both decks' order), and every move has a time limit.
 
-**Final result:** rank 2531 / 6892 teams (top 37%), rating 668.
-Best converged rating during the run: ~820.
+**Result:** rank 2,166 of 6,807 teams, rating 701.2, on the public leaderboard
+as exported on 13 October 2026. The best rating any of the 38 submissions
+reached was 879.8.
 
----
+![Each submission's rating on the final ladder, July to August 2026](figures/ladder.svg)
 
-## Approach
+## Watch it play
 
-The agent is a **scripted policy wrapped in a determinized beam search with a
-learned value function at the leaves**.
+[`docs/replay/`](docs/replay/) replays one complete local game turn by turn: the
+board before each decision, every option the agent was offered with its policy
+score, and, where the search ran, the candidate turns it compared and how each
+scored. It is the first game recorded with `tools/record_game.py`, not a pick.
+
+```bash
+python3 -m http.server -d docs/replay 8000   # then open http://localhost:8000
+```
+
+![Replay viewer: the search overrides the policy on turn 1](docs/replay/screenshot.png)
+
+## How it decides
+
+The submitted agent ([`baselines/v12_pwr/`](baselines/v12_pwr/), identical to the
+last build sent to Kaggle) is a scripted policy wrapped in a determinized
+whole-turn search, with a learned value function scoring the leaves.
 
 ```
 observation ──> archetype detection ──> per-matchup config
                         │
                         ▼
-        candidate move generation (hand-written scorers,
-        ~30 decision contexts: play / attach / evolve /
+        candidate moves from hand-written scorers
+        (~30 decision contexts: play / attach / evolve /
         retreat / attack / promote / …)
                         │
                         ▼
-        within-turn beam search  (width 4, top-3 expansion)
-        over whole action *sequences*, not single moves
+        at pivotal decisions: up to 5 candidate first actions,
+        each followed by a beam search over the rest of the turn
+        (width 4, top-3 expansion), then the opponent's reply,
+        in up to 10 sampled worlds for the hidden cards
                         │
                         ▼
-        determinized opponent reply  (N sampled worlds for
-        hidden hand/deck state)
-                        │
-                        ▼
-        leaf evaluation:  0.6 × handcrafted eval
-                        + 0.4 × AlphaZero value head
+        leaf value: 0.6 × AlphaZero value head
+                  + 0.4 × squashed handcrafted score
 ```
 
-Three components, built in that order:
+1. **Scripted policy.** Per-context card scorers and an attack planner with
+   weakness and resistance maths, knock-out and prize-race logic, and
+   per-archetype overrides (`main.py`, `deck_configs.py`).
+2. **Whole-turn search.** A challenger replaces the policy's pick only if it
+   beats it by a fixed margin summed over the sampled worlds. Turning
+   single-move search into whole-turn beam search was build v6.
+3. **AlphaZero value head.** A 697,602-parameter policy-and-value network
+   trained by self-play expert iteration (`agent_az/`, `train/`). Its policy
+   head never beat its scripted teacher, but its value head replaced the
+   earlier numpy value net at the search leaves from build v10 on. It predicts
+   the winner of held-out self-play positions with an AUC of 0.807, and of
+   positions from real ladder games with 0.736.
 
-1. **Scripted policy** — per-context card scorers plus an attack planner with
-   weakness/resistance maths, KO and prize-race logic, and per-archetype
-   overrides. On its own this was worth ~790 rating.
-2. **Determinized beam search** — optimises the entire turn's action sequence
-   rather than one move at a time. This was the single largest gain of the
-   project (+7pp head-to-head). Shallow search had been *informationally
-   sterile*: rolling out both sides with the same policy and scoring with the
-   same eval just re-derived the policy's own preferences.
-3. **AlphaZero value head** — a small policy+value network trained by self-play
-   expert iteration. The *policy* head plateaued at parity with its scripted
-   teacher (it distils toward the teacher and can't exceed it), but the **value
-   head kept improving** (0.72 → 0.80 outcome AUC) and, grafted into the search
-   leaves in place of the numpy value net, beat the previous best agent 58%
-   head-to-head over 400 games.
+`agent2/` is a later development copy of the same agent. It does not load the
+AlphaZero value head. The value-head weights (`az_value_net.pt`, 2.8 MB) are
+not committed, so a fresh clone falls back to the numpy value net and prints
+a warning.
 
 ## What turned out to matter
 
-Most of the measured wins came from **finding bugs in the world model**, not
-from tuning heuristics.
+Most of the gains came from fixing the agent's model of the game, not from
+tuning.
 
-- **`deck.csv` was never read.** The agent submitted its deck from a config
-  constant, so *every* deck experiment for six weeks had silently compared
-  identical decks. Found by pulling real ladder replays and noticing a card the
-  agent should have been playing appeared zero times in 23 games.
-- **An opponent's main attack was modelled as 0 damage.** Alakazam's *Powerful
-  Hand* places 2 damage counters per card in hand (20 × hand size ≈ 160–200),
-  but the card data lists its damage as `n/a`. The threat model therefore never
-  rotated a damaged attacker out of a lethal it couldn't see. Fixing it moved
-  that matchup from 43% → 54% on the live ladder, and dragged a second matchup
-  from ~35% to ~58%.
-- **Local evaluation lies.** Framework-piloted "opponents" were unfaithful
-  (one lost to us 71% while the real deck beat us 63%). Ground truth came from
-  downloading our own ladder replays and computing per-archetype win rates
-  against the actual field.
+- **`deck.csv` was never read.** Until build v11 the agent always played the
+  deck from a config constant, so every earlier deck experiment compared
+  identical decks (comment in `baselines/v12_pwr/main.py`; v11's submission
+  note).
+- **An opponent's main attack was modelled as 0 damage.** The card list gives
+  Alakazam's *Powerful Hand* a damage of 0; it actually places damage counters
+  for each card in the attacker's hand. Build v12 taught the threat model about
+  it. On the live ladder, against Alakazam decks, v11 won 9 of 21 games with a
+  cached replay (42.9%, 95% interval 24–64%) and v12 won 7 of 13 (53.8%, 29–77%).
+  That is the direction I hoped for, but far too few games to call.
+- **Local opponents are stand-ins.** The `fw_*` opponents are other decks
+  piloted by this agent's own framework, not the real players. The ladder
+  replays are the ground truth (`tools/my_episodes.py`).
 
-## What didn't work (kept because negative results are results)
+## How much a win rate moves on its own
 
-- **Policy micro-surgery** — four separate hand-reasoned "obvious" fixes
-  (energy-attachment guards, supporter priority, threat-model rewrites) each
-  measured **negative** in paired testing. The beam+value optimiser was
-  already making better decisions than local reasoning about individual cards.
-- **Scaling search width** — doubling the beam changed runtime by only ~25%:
-  the per-turn branching factor is too small to fill a wider beam, so compute
-  headroom couldn't be converted into strength.
-- **Imitation learning** — a policy net predicted top players' moves +10pp
-  better than the scripts, yet *played* worse when used as a candidate
-  generator. Move-prediction accuracy ≠ playing strength.
-- **More self-play rounds** — the standalone AlphaZero agent plateaued at
-  parity with its scripted teacher across four expert-iteration rounds.
+![Repeated local runs and the ladder Alakazam matchup, with 95% intervals](figures/noise.svg)
 
-## Methodology notes
+The agent is not deterministic, so a 204-game local cell has a 95% interval of
+about ±6.8 points at 50%. The same agent against the same opponent scored
+53.9% and then 66.2% in two runs (`logs/screen_v12_rest_cells.log`). Differences
+under about ten points cannot be resolved at that sample size, and several
+changes that looked like improvements were not.
 
-Two measurement lessons that cost real time:
+## What didn't work
 
-- **Pool your controls.** The agent is non-deterministic, so a 204-game
-  evaluation cell carries ±7pp. A single control cell made three separate
-  "improvements" look real; re-running the *control* three times showed the
-  baseline itself spanned 42–55%. Nothing below ~10pp is resolvable at that
-  sample size.
-- **Verify the scoreboard, don't model it.** I spent two weeks optimising
-  against an assumed scoring rule (that deactivated submissions still counted
-  toward team score). They don't — only the active submissions count. Reading
-  our own leaderboard row once would have caught it immediately.
+These are from my notes during the competition; the runs behind them were not
+kept, so treat them as reported, not measured here.
+
+- Hand-reasoned fixes to the policy (energy-attachment guards, supporter
+  priority, threat-model rewrites) each measured worse in paired testing.
+- A wider beam barely changed anything: the per-turn branching factor is too
+  small to fill it.
+- An imitation-learned policy predicted top players' moves better than the
+  scripts but played worse as a candidate generator.
+- More self-play rounds left the standalone AlphaZero agent level with its
+  scripted teacher.
+
+## Where each number comes from
+
+| Claim | Source |
+|---|---|
+| Rank 2,166 of 6,807, rating 701.2 | Kaggle public leaderboard export, 13 Oct 2026 (`results/results.json`, `ladder.leaderboard`) |
+| Each build's rating; highest 879.8 | Kaggle submissions list (`ladder.builds_first_submission`, `ladder.all_submissions`) |
+| Alakazam 9/21 → 7/13 | Kaggle episode lists and locally cached replays (`matchups`) |
+| ±6.8 points at 204 games; repeated cells | Tracked logs in `logs/`; every interval recomputed and matching (`local_screens`) |
+| *Powerful Hand* listed as 0 damage | Competition card list (not included) |
+| v10 beat v8-judge 58% over 400 games (95% interval 53.2–62.8) | v10's submission note only; the game log was not kept |
+| Value head: outcome AUC 0.807 on held-out self-play positions, 0.736 on held-out ladder positions | Metrics saved in the submitted checkpoint by `train/train_az2.py` (`value_head`). The best epoch was chosen on the same held-out sets, so both are optimistic. |
+| The numpy value net it replaced: about 0.72 | Code comment in `baselines/v12_pwr/main.py` only |
+
+`results/results.json` is written by `tools/site_results.py`; the figures by
+`tools/make_figures.py`.
 
 ## Layout
 
 | Path | Contents |
 |---|---|
-| `agent2/` | The main agent: policy, beam search, value-net integration, per-deck configs |
-| `agent_az/` | AlphaZero implementation — network, PUCT MCTS, self-play |
-| `train/` | Training scripts for the value/policy nets (data not included) |
-| `tools/` | Analysis: ladder-replay mining, per-archetype win rates, paired-seed leagues, matchup autopsies |
+| `baselines/v12_pwr/` | The submitted agent |
+| `agent2/` | Later development copy of the agent (numpy value net) |
+| `agent_az/` | AlphaZero network, PUCT MCTS and self-play agent |
+| `train/` | Training scripts for the value and policy nets (data not included) |
+| `tools/` | Local leagues, ladder-replay analysis, the game recorder, results and figures |
 | `baselines/` | Frozen agent variants used as controls and sparring partners |
-| `exp/` | Archived experiments (incl. no-ship branches) |
+| `exp/` | Archived experiments, including ones that were not shipped |
+| `logs/`, `runs/` | Kept local evaluation logs |
+| `docs/replay/` | Replay viewer and the recorded game |
 
 ## Running it
 
-**The competition engine is not included in this repository.** The simulator
-(`ptcgProgram`), the card data, and the match replays are covered by
-`LicenseRef-PTCG-ABC-Competition-Use-Only`, which explicitly prohibits
-redistribution. Reproducing this work requires downloading those from Kaggle
-under your own competition entry; the code expects a `cg/` package and
-`data/EN_Card_Data.csv` alongside each agent directory.
+**The competition engine is not included.** The simulator, the card data and
+the match replays are licensed for competition use only and may not be
+redistributed. To run anything that plays games you need the competition
+package from Kaggle: put its `sample_submission/` under `data/` (the code looks
+for `data/sample_submission/sample_submission/cg/` and `data/EN_Card_Data.csv`).
+
+Requires Python 3.13 and [uv](https://docs.astral.sh/uv/).
 
 ```bash
-# local head-to-head between two agent variants (needs the engine present)
-uv run --python 3.13 --with numpy,torch python tools/league.py agent2 baselines/v6
+# local head-to-head, here 8 games (checked on 13 Oct 2026: ~25 s on an M-series Mac)
+uv run --python 3.13 --with-requirements requirements.txt \
+    python tools/league.py baselines/v12_pwr baselines/v6 8
 
-# per-archetype win rates from your own ladder replays
-uv run --python 3.13 python tools/my_episodes.py <SUBMISSION_ID>
+# record one game and export it for the viewer
+uv run --python 3.13 --with-requirements requirements.txt \
+    python tools/record_game.py baselines/v12_pwr baselines/fw_alakazam recording.json --seed 1
+python3 tools/export_demo.py recording.json docs/replay/demo.json
+
+# redraw the figures from results/results.json (no engine needed)
+python3 tools/make_figures.py
 ```
+
+## Licence
+
+My code is under the MIT licence (`LICENSE`). `baselines/multiply/` is a port of
+aristophanivan's "MultiPly Beam Search Agent" Kaggle notebook under the Apache
+License 2.0 (see its `NOTICE`). A port of a second public notebook, which states
+no licence, was used locally as a sparring partner and is not included.
