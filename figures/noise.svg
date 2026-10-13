@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 488" width="920" height="488" role="img" aria-labelledby="t d" font-family="Archivo, sans-serif">
+<title id="t">Win rates with 95% intervals: local repeats and the live Alakazam matchup</title>
+<desc id="d">Dots are win rates; lines are 95% Wilson intervals. Source: tracked logs and cached ladder replays, results.json.</desc>
+<rect width="920" height="488" fill="#F6F2E8"/>
+<text x="24.0" y="34.0" font-size="20" font-weight="700" fill="#231F1B" text-anchor="start">How much a win rate moves on its own</text>
+<text x="24.0" y="56.0" font-size="14" font-weight="400" fill="#3D372F" text-anchor="start">Win rate with 95% Wilson interval. At 204 games the interval is about ±6.8 points.</text>
+<text x="24.0" y="104.0" font-size="15" font-weight="700" fill="#231F1B" text-anchor="start">Same matchup, played twice locally (204 games each)</text>
+<line x1="330.0" x2="330.0" y1="112" y2="292" stroke="#B3A992" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="440.0" x2="440.0" y1="112" y2="292" stroke="#B3A992" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="550.0" x2="550.0" y1="112" y2="292" stroke="#B3A992" stroke-width="1"/>
+<line x1="660.0" x2="660.0" y1="112" y2="292" stroke="#B3A992" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="770.0" x2="770.0" y1="112" y2="292" stroke="#B3A992" stroke-width="1" stroke-dasharray="3 3"/>
+<text x="24.0" y="131.0" font-size="13.5" font-weight="400" fill="#231F1B" text-anchor="start">v11 vs fw_archaludon, run 1</text>
+<line x1="472.1" x2="530.6" y1="126" y2="126" stroke="#1F6FB5" stroke-width="3" stroke-linecap="round"/>
+<circle cx="500.3" cy="126" r="6" fill="#1F6FB5"/>
+<text x="786" y="131" font-size="14" fill="#231F1B"><tspan font-weight="700">38.7%</tspan><tspan fill="#3D372F" font-size="12"> 79-125, 32–46</tspan></text>
+<text x="24.0" y="161.0" font-size="13.5" font-weight="400" fill="#231F1B" text-anchor="start">v11 vs fw_archaludon, run 2</text>
+<line x1="451.9" x2="508.6" y1="156" y2="156" stroke="#1F6FB5" stroke-width="3" stroke-linecap="round"/>
+<circle cx="478.7" cy="156" r="6" fill="#1F6FB5"/>
+<text x="786" y="161" font-size="14" fill="#231F1B"><tspan font-weight="700">33.8%</tspan><tspan fill="#3D372F" font-size="12"> 69-135, 28–41</tspan></text>
+<text x="24.0" y="191.0" font-size="13.5" font-weight="400" fill="#231F1B" text-anchor="start">v12_arch vs fw_archaludon, run 1</text>
+<line x1="466.0" x2="524.0" y1="186" y2="186" stroke="#1F6FB5" stroke-width="3" stroke-linecap="round"/>
+<circle cx="494.1" cy="186" r="6" fill="#1F6FB5"/>
+<text x="786" y="191" font-size="14" fill="#231F1B"><tspan font-weight="700">37.3%</tspan><tspan fill="#3D372F" font-size="12"> 76-128, 31–44</tspan></text>
+<text x="24.0" y="221.0" font-size="13.5" font-weight="400" fill="#231F1B" text-anchor="start">v12_arch vs fw_archaludon, run 2</text>
+<line x1="433.8" x2="488.4" y1="216" y2="216" stroke="#1F6FB5" stroke-width="3" stroke-linecap="round"/>
+<circle cx="459.4" cy="216" r="6" fill="#1F6FB5"/>
+<text x="786" y="221" font-size="14" fill="#231F1B"><tspan font-weight="700">29.4%</tspan><tspan fill="#3D372F" font-size="12"> 60-144, 24–36</tspan></text>
+<text x="24.0" y="251.0" font-size="13.5" font-weight="400" fill="#231F1B" text-anchor="start">v12c vs alakazam, run 1</text>
+<line x1="537.2" x2="596.6" y1="246" y2="246" stroke="#1F6FB5" stroke-width="3" stroke-linecap="round"/>
+<circle cx="567.2" cy="246" r="6" fill="#1F6FB5"/>
+<text x="786" y="251" font-size="14" fill="#231F1B"><tspan font-weight="700">53.9%</tspan><tspan fill="#3D372F" font-size="12"> 110-94, 47–61</tspan></text>
+<text x="24.0" y="281.0" font-size="13.5" font-weight="400" fill="#231F1B" text-anchor="start">v12c vs alakazam, run 2</text>
+<line x1="591.4" x2="648.1" y1="276" y2="276" stroke="#1F6FB5" stroke-width="3" stroke-linecap="round"/>
+<circle cx="621.3" cy="276" r="6" fill="#1F6FB5"/>
+<text x="786" y="281" font-size="14" fill="#231F1B"><tspan font-weight="700">66.2%</tspan><tspan fill="#3D372F" font-size="12"> 135-69, 59–72</tspan></text>
+<text x="24.0" y="328.0" font-size="15" font-weight="700" fill="#231F1B" text-anchor="start">Alakazam matchup on the live ladder, before and after the fix</text>
+<line x1="330.0" x2="330.0" y1="336" y2="396" stroke="#B3A992" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="440.0" x2="440.0" y1="336" y2="396" stroke="#B3A992" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="550.0" x2="550.0" y1="336" y2="396" stroke="#B3A992" stroke-width="1"/>
+<line x1="660.0" x2="660.0" y1="336" y2="396" stroke="#B3A992" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="770.0" x2="770.0" y1="336" y2="396" stroke="#B3A992" stroke-width="1" stroke-dasharray="3 3"/>
+<text x="24.0" y="355.0" font-size="13.5" font-weight="400" fill="#231F1B" text-anchor="start">v11 vs Alakazam decks</text>
+<line x1="437.8" x2="609.4" y1="350" y2="350" stroke="#7A4E9E" stroke-width="3" stroke-linecap="round"/>
+<circle cx="518.8" cy="350" r="6" fill="#7A4E9E"/>
+<text x="786" y="355" font-size="14" fill="#231F1B"><tspan font-weight="700">42.9%</tspan><tspan fill="#3D372F" font-size="12"> 9-12, 24–64</tspan></text>
+<text x="24.0" y="385.0" font-size="13.5" font-weight="400" fill="#231F1B" text-anchor="start">v12 (Powerful Hand fix) vs Alakazam decks</text>
+<line x1="458.0" x2="667.9" y1="380" y2="380" stroke="#7A4E9E" stroke-width="3" stroke-linecap="round"/>
+<circle cx="566.7" cy="380" r="6" fill="#7A4E9E"/>
+<text x="786" y="385" font-size="14" fill="#231F1B"><tspan font-weight="700">53.8%</tspan><tspan fill="#3D372F" font-size="12"> 7-6, 29–77</tspan></text>
+<text x="330.0" y="422.0" font-size="12" font-weight="400" fill="#3D372F" text-anchor="middle">0%</text>
+<text x="440.0" y="422.0" font-size="12" font-weight="400" fill="#3D372F" text-anchor="middle">25%</text>
+<text x="550.0" y="422.0" font-size="12" font-weight="400" fill="#3D372F" text-anchor="middle">50%</text>
+<text x="660.0" y="422.0" font-size="12" font-weight="400" fill="#3D372F" text-anchor="middle">75%</text>
+<text x="770.0" y="422.0" font-size="12" font-weight="400" fill="#3D372F" text-anchor="middle">100%</text>
+</svg>
