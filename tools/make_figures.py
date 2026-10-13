@@ -48,10 +48,10 @@ def text(x, y, s, size=14, fill=INK, weight="400", anchor="start", extra=""):
 
 def ladder_svg(res):
     lad = res["ladder"]
-    subs = lad["all_submissions"]
-    W, H = 920, 470
+    builds = [b for b in lad["builds_first_submission"] if b["rating"] is not None]
+    W, H = 920, 490
     L, R, T, B = 70, 740, 96, 400
-    d0, d1 = date(2026, 6, 30), date(2026, 8, 11)
+    d0, d1 = date(2026, 6, 30), date(2026, 7, 30)
     y0, y1 = 500, 950
 
     def x(d):
@@ -62,19 +62,21 @@ def ladder_svg(res):
         return B - (v - y0) / (y1 - y0) * (B - T)
 
     lb = lad["leaderboard"]
-    p = head(W, H, "Kaggle rating of each submission, July to August 2026",
-             "Each dot is one submission's rating on the final ladder. Filled: first submission "
-             "of a build; open: a resubmitted copy. Source: Kaggle submissions list, results.json.")
+    copies = lad["copies_per_build"].get("v12_pwr", 1)
+    peak = lad["highest_rating_any_submission"]
+    p = head(W, H, "Kaggle rating of each build, July 2026",
+             "One dot per build: the rating of its first submission on the final ladder. "
+             "Source: Kaggle submissions list, results.json.")
     p.append(text(24, 34, "Every build's rating on the live ladder", 20, weight="700"))
-    p.append(text(24, 56, "TrueSkill rating of each submission on the final leaderboard. Filled dot: "
-                          "a new build. Open dot: the same build resubmitted.", 14, SECONDARY))
+    p.append(text(24, 56, "TrueSkill rating on the final leaderboard of each build's first "
+                          "submission.", 14, SECONDARY))
     for v in range(500, 951, 100):
         dash = "" if v == 500 else ' stroke-dasharray="3 3"'
         p.append(f'<line x1="{L}" x2="{R}" y1="{y(v):.1f}" y2="{y(v):.1f}" stroke="{RULE}" '
                  f'stroke-width="1"{dash}/>')
         p.append(text(L - 10, y(v) + 5, str(v), 12, SECONDARY, anchor="end"))
-    for d, s in (("2026-07-01", "Jul 1"), ("2026-07-15", "Jul 15"), ("2026-08-01", "Aug 1"),
-                 ("2026-08-10", "Aug 10")):
+    for d, s in (("2026-07-01", "Jul 1"), ("2026-07-08", "Jul 8"), ("2026-07-15", "Jul 15"),
+                 ("2026-07-22", "Jul 22"), ("2026-07-29", "Jul 29")):
         p.append(text(x(d), B + 22, s, 12, SECONDARY, anchor="middle"))
     # team score line
     p.append(f'<line x1="{L}" x2="{R}" y1="{y(lb["score"]):.1f}" y2="{y(lb["score"]):.1f}" '
@@ -82,19 +84,10 @@ def ladder_svg(res):
     for i, line in enumerate(("Final leaderboard", f'{lb["score"]:.1f}',
                               f'rank {lb["rank"]:,} of {lb["teams"]:,}')):
         p.append(text(R + 12, y(lb["score"]) + 5 + 17 * i, line, 13, ORANGE, "700"))
-    seen = set()
-    for s in subs:
-        if s["rating"] is None:
-            continue
+    for s in builds:
         cx, cy = x(s["submitted"]), y(s["rating"])
-        first = s["build"] not in seen
-        seen.add(s["build"])
-        if first:
-            p.append(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="6" fill="{BLUE}"/>')
-        else:
-            p.append(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="5" fill="{CARD}" stroke="{BLUE}" '
-                     f'stroke-width="1.6"/>')
-        if first and s["build"] in STACKED:
+        p.append(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="6" fill="{BLUE}"/>')
+        if s["build"] in STACKED:
             rating, dx = STACKED[s["build"]]
             ly = y(rating)
             lx1 = cx + (6 if dx else 0)
@@ -102,12 +95,16 @@ def ladder_svg(res):
             p.append(f'<line x1="{lx1:.1f}" y1="{ly1:.1f}" x2="{cx + dx:.1f}" y2="{ly + 5:.1f}" '
                      f'stroke="{SECONDARY}" stroke-width="0.8"/>')
             p.append(text(cx + dx - 4, ly, LABELS[s["build"]], 12.5, INK, "600", "start"))
-        elif first and s["build"] in LABELS:
-            above = s["build"] != "v11"
-            p.append(text(cx + 9, cy + (-10 if above else 19), LABELS[s["build"]], 12.5, INK, "600"))
-    n = lad["copies_per_build"].get("v12_pwr", 0)
-    p.append(text(x("2026-08-01"), y(935), f"{n} copies of v12 (open dots)", 12.5, SECONDARY))
-    p.append(text(24, H - 22, f"Ratings as listed on {lb['file'][-23:-13]}. Two submissions that "
+        elif s["build"] in LABELS:
+            if s["build"] == "v12_pwr":
+                p.append(text(cx - 9, cy - 10, LABELS[s["build"]], 12.5, INK, "600", "end"))
+            else:
+                above = s["build"] != "v11"
+                p.append(text(cx + 9, cy + (-10 if above else 19), LABELS[s["build"]], 12.5, INK, "600"))
+    p.append(text(24, H - 40, f"The final build (v12) was submitted {copies} times in all; the "
+                              f"{peak:.1f} peak and the {lb['score']:.1f} leaderboard score both "
+                              "come from those copies.", 12, SECONDARY))
+    p.append(text(24, H - 22, f"Ratings as listed on {lb['file'][-23:-13]}. Two builds that "
                               "errored on Kaggle have no rating and are not shown.", 12, SECONDARY))
     p.append("</svg>")
     return "\n".join(p)
