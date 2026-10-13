@@ -13,7 +13,7 @@ import sys
 
 import numpy as np
 
-REPO = "/Users/colin/Documents/pokemon-tcg-ai"
+REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(REPO, "train", "data")
 HOLDOUT = 0.15
 SEED = 7

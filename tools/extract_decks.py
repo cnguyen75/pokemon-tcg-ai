@@ -2,7 +2,8 @@
 import json, glob, csv, sys
 from collections import Counter, defaultdict
 
-CARD_CSV = '/Users/colin/Documents/pokemon-tcg-ai/data/EN_Card_Data.csv'
+import os
+CARD_CSV = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data', 'EN_Card_Data.csv')
 names = {}
 for r in csv.DictReader(open(CARD_CSV)):
     names.setdefault(int(r['Card ID']), r['Card Name'])

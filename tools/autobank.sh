@@ -19,7 +19,7 @@
 #     headroom for manual recycling
 #   - no-op if the tarball or kaggle CLI is missing
 set -u
-ROOT=/Users/colin/Documents/pokemon-tcg-ai
+ROOT=${0:A:h:h}
 KG=~/.local/bin/kaggle
 TARBALL=$ROOT/runs/submission_v12_pwr.tar.gz
 STATE=$ROOT/runs/peak_floor.txt
