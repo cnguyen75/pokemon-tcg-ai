@@ -3,6 +3,6 @@ baselines/multiply/main.py is a port of the public Kaggle notebook
 (https://www.kaggle.com/code/aristophanivan/multiply-agent-best-940-lb),
 released under the Apache License, Version 2.0 (see LICENSE in this folder).
 
-Changes from the original: wrapped as a local sparring agent for
-tools/league.py; the agent-directory lookup was adapted so the file runs
-outside /kaggle_simulations. It is not part of the submitted agent.
+It is used only as a local sparring agent for tools/league.py and is not
+part of the submitted agent. The header of main.py describes how the port
+differs from the notebook.
