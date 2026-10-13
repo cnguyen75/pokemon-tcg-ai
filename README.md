@@ -145,8 +145,12 @@ kept, so treat them as reported, not measured here.
 **The competition engine and data are not included, and have been deleted.**
 The simulator, the card data and the match replays were licensed for
 competition use only: not to be redistributed, and to be deleted when the
-competition ended. They were never committed, and after the replay in
-`docs/replay/` was recorded, every local copy was deleted (13 October 2026).
+competition ended. They were never committed. After the replay in
+`docs/replay/` was recorded, every local copy was deleted (13 October 2026):
+the package, the engine build, the cached replays, the engine copy in each
+agent folder, the submission bundles (which contained the engine), and the
+training tensors extracted from replays. The code of every submitted build is
+in `baselines/` (v1 and v1.1 were recovered from their bundles first).
 To run anything that plays games you need the competition package from
 Kaggle: put its `sample_submission/` under `data/` (the code looks for
 `data/sample_submission/sample_submission/cg/` and `data/EN_Card_Data.csv`).
