@@ -7,9 +7,9 @@ hand and both decks' order), and every move has a time limit.
 
 **Result:** rank 2,166 of 6,807 teams, rating 701.2, on the public leaderboard
 as exported on 13 October 2026. The best rating any of the 38 submissions
-reached was 879.8.
+reached was 879.8, from one of 18 submissions of the final build.
 
-![Each submission's rating on the final ladder, July to August 2026](figures/ladder.svg)
+![Each build's rating on the final ladder, July 2026](figures/ladder.svg)
 
 ## Watch it play
 
@@ -116,7 +116,7 @@ kept, so treat them as reported, not measured here.
 |---|---|
 | Rank 2,166 of 6,807, rating 701.2 | Kaggle public leaderboard export, 13 Oct 2026 (`results/results.json`, `ladder.leaderboard`) |
 | Each build's rating; highest 879.8 | Kaggle submissions list (`ladder.builds_first_submission`, `ladder.all_submissions`) |
-| Alakazam 9/21 → 7/13 | Kaggle episode lists and locally cached replays (`matchups`) |
+| Alakazam 9/21 → 7/13 | Kaggle episode lists and cached replays, computed before the replays were deleted (`matchups`) |
 | ±6.8 points at 204 games; repeated cells | Tracked logs in `logs/`; every interval recomputed and matching (`local_screens`) |
 | *Powerful Hand* listed as 0 damage | Competition card list (not included) |
 | v10 beat v8-judge 58% over 400 games (95% interval 53.2–62.8) | v10's submission note only; the game log was not kept |
@@ -142,11 +142,15 @@ kept, so treat them as reported, not measured here.
 
 ## Running it
 
-**The competition engine is not included.** The simulator, the card data and
-the match replays are licensed for competition use only and may not be
-redistributed. To run anything that plays games you need the competition
-package from Kaggle: put its `sample_submission/` under `data/` (the code looks
-for `data/sample_submission/sample_submission/cg/` and `data/EN_Card_Data.csv`).
+**The competition engine and data are not included, and have been deleted.**
+The simulator, the card data and the match replays were licensed for
+competition use only: not to be redistributed, and to be deleted when the
+competition ended. They were never committed, and after the replay in
+`docs/replay/` was recorded, every local copy was deleted (13 October 2026).
+To run anything that plays games you need the competition package from
+Kaggle: put its `sample_submission/` under `data/` (the code looks for
+`data/sample_submission/sample_submission/cg/` and `data/EN_Card_Data.csv`).
+Redrawing the figures and viewing the replay need neither.
 
 Requires Python 3.13 and [uv](https://docs.astral.sh/uv/).
 
