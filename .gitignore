@@ -54,3 +54,10 @@ venv/
 kaggle.json
 *.pem
 .DS_Store
+
+# ---------------------------------------------------------------------------
+# Third-party code with no stated licence: kept locally as a sparring partner,
+# not redistributed (port of kaggle.com/code/makthanithin "1084.5 Baseline").
+# ---------------------------------------------------------------------------
+baselines/lucario1084/
+exp/notebook_1084_raw.txt
