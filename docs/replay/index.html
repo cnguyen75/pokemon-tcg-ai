@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Game replay</title>
+<style>
+@font-face{font-family:Archivo;font-weight:400;font-display:swap;src:url(fonts/archivo-400.woff2) format("woff2")}
+@font-face{font-family:Archivo;font-weight:600;font-display:swap;src:url(fonts/archivo-600.woff2) format("woff2")}
+@font-face{font-family:Archivo;font-weight:700;font-display:swap;src:url(fonts/archivo-700.woff2) format("woff2")}
+@font-face{font-family:"Courier Prime";font-weight:400;font-display:swap;src:url(fonts/courier-prime-400.woff2) format("woff2")}
+:root{--paper:#E8E2D3;--card:#F6F2E8;--ink:#231F1B;--ink2:#3D372F;--ink3:#4F483E;--rule:#B3A992;
+  --teal:#2F5D62;--blue:#1F6FB5;--orange:#C0601F;--purple:#7A4E9E}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.45 Archivo,system-ui,sans-serif}
+.wrap{max-width:1180px;margin:0 auto;padding:24px 16px 40px}
+.label{font-family:"Courier Prime",ui-monospace,monospace;font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--teal)}
+h1{font-size:26px;line-height:1.15;margin:6px 0 6px}
+.sub{color:var(--ink2);margin:0 0 18px;max-width:760px}
+.panel{background:var(--card);border:1px solid var(--rule);border-radius:4px;padding:16px}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+button{font:600 14px Archivo,sans-serif;color:var(--ink);background:var(--card);border:1px solid var(--ink3);border-radius:3px;padding:7px 12px;cursor:pointer;min-height:36px}
+button:hover{background:#fff}
+button:disabled{opacity:.4;cursor:default}
+.pos{font-family:"Courier Prime",monospace;color:var(--ink2)}
+.turns{display:flex;flex-wrap:wrap;gap:6px}
+.turns button{font-weight:400;padding:5px 9px;min-height:32px}
+.turns button[aria-current="true"]{background:var(--ink);color:var(--card);border-color:var(--ink)}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:16px}
+@media (max-width:820px){.grid{grid-template-columns:1fr}}
+h2{font-size:16px;margin:0 0 10px}
+.side{border-top:1px solid var(--rule);padding:10px 0 4px}
+.side:first-of-type{border-top:0;padding-top:0}
+.side h3{margin:0 0 6px;font-size:14px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.side h3 span{font-weight:400;color:var(--ink2);font-size:13px}
+.mon{border:1px solid var(--rule);border-radius:3px;padding:6px 8px;margin:0 0 6px;background:#fff8}
+.mon.active{border-color:var(--ink3);border-width:1.5px}
+.mon .n{font-weight:600}
+.mon .meta{font-size:12.5px;color:var(--ink2)}
+.hp{height:6px;background:#0001;border-radius:3px;margin:4px 0 2px;overflow:hidden}
+.hp i{display:block;height:100%;background:var(--blue)}
+.bench{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px}
+.hand{font-size:13px;color:var(--ink2);margin:6px 0 0}
+.events{margin:0 0 12px;padding:0;list-style:none;font-size:13.5px}
+.events li{padding:3px 0;border-bottom:1px dotted var(--rule)}
+.who{font-family:"Courier Prime",monospace;font-size:12px;text-transform:uppercase;letter-spacing:.04em;margin-right:6px}
+.who.agent{color:var(--blue)}.who.opponent{color:var(--orange)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{font:400 12px "Courier Prime",monospace;text-transform:uppercase;letter-spacing:.05em;color:var(--ink2);text-align:left;padding:4px 6px;border-bottom:1px solid var(--rule)}
+td{padding:6px;border-bottom:1px solid #B3A99255;vertical-align:middle}
+td.num{font-family:"Courier Prime",monospace;text-align:right;white-space:nowrap;width:1%}
+td.barc{width:34%}
+.sbar{height:10px;background:var(--blue);border-radius:2px;min-width:1px}
+.sbar.neg{background:transparent;border:1px solid var(--rule)}
+tr.chosen td{background:#1F6FB514;font-weight:600}
+.tag{display:inline-block;font:400 11px "Courier Prime",monospace;text-transform:uppercase;letter-spacing:.05em;border:1px solid var(--ink3);border-radius:2px;padding:0 4px;margin-left:6px;vertical-align:1px}
+.tag.fill{background:var(--ink);color:var(--card);border-color:var(--ink)}
+.note{font-size:13px;color:var(--ink2);margin:8px 0 0}
+.search{margin-top:16px;border-top:1px solid var(--rule);padding-top:12px}
+.verdict{font-weight:600;margin:0 0 8px}
+.trace{margin-top:16px}
+.trace svg{width:100%;height:auto;display:block}
+.foot{font-size:12.5px;color:var(--ink2);margin-top:18px}
+.foot a{color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="label">Pokémon TCG agent · recorded game</div>
+  <h1 id="title">One game, decision by decision</h1>
+  <p class="sub" id="subtitle"></p>
+
+  <div class="bar">
+    <button id="prev" aria-label="Previous decision">◀ Prev</button>
+    <button id="next" aria-label="Next decision">Next ▶</button>
+    <span class="pos" id="pos" aria-live="polite"></span>
+    <div class="turns" id="turns" role="group" aria-label="Jump to turn"></div>
+  </div>
+
+  <div class="grid">
+    <section class="panel" aria-labelledby="board-h">
+      <h2 id="board-h">Board before this decision</h2>
+      <ul class="events" id="events"></ul>
+      <div id="board"></div>
+    </section>
+    <section class="panel" aria-labelledby="dec-h">
+      <h2 id="dec-h">What the agent considered</h2>
+      <div id="decision"></div>
+      <div class="search" id="search"></div>
+    </section>
+  </div>
+
+  <section class="panel trace" aria-labelledby="trace-h">
+    <h2 id="trace-h">Agent's own estimate of its winning chances</h2>
+    <div id="trace"></div>
+    <p class="note">Leaf evaluation at each decision: 0.6 × the AlphaZero value head's win probability + 0.4 × a squashed handcrafted score. It is the agent's estimate, not a measured probability.</p>
+  </section>
+
+  <p class="foot" id="foot"></p>
+</div>
+<script>
+const ENERGY = {G:"Grass",R:"Fire",W:"Water",L:"Lightning",P:"Psychic",F:"Fighting",D:"Darkness",M:"Metal"};
+const nice = s => String(s).replace(/\{([GRWLPFDM])\}/g, (_, k) => ENERGY[k]);
+const esc = s => nice(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const CONTEXT = {main:"Main phase: choose an action", is_first:"Go first?", mulligan:"Mulligan check",
+  setup_active_pokemon:"Choose the starting Active Pokémon", setup_bench_pokemon:"Choose starting Bench Pokémon",
+  to_hand:"Choose a card to put into the hand", damage:"Choose where the attack's bench damage goes",
+  to_active:"Choose the new Active Pokémon", to_bench:"Choose Pokémon for the Bench", discard:"Choose a card to discard",
+  switch:"Choose a Pokémon to switch in"};
+const ctxName = c => CONTEXT[c] || c.replace(/_/g, " ").replace(/^./, m => m.toUpperCase());
+
+let D, steps = [], i = 0;
+
+function eventText(e) {
+  switch (e.e) {
+    case "turn_start": return "Turn starts";
+    case "play": return `Plays ${esc(e.card)}`;
+    case "attach": return `Attaches ${esc(e.card)} to ${esc(e.to)}`;
+    case "evolve": return `Evolves ${esc(e.from)} into ${esc(e.into)}`;
+    case "switch": return `${esc(e.bench)} and ${esc(e.active)} switch places`;
+    case "attack": return `${esc(e.by)} attacks with ${esc(e.attack)}`;
+    case "hp": return `${esc(e.card)} ${e.change > 0 ? "+" : ""}${e.change} HP`;
+    case "knocked_out": return `${esc(e.card)} is knocked out`;
+    case "prize": return "Takes a prize card";
+    case "coin": return `Coin flip: ${e.heads ? "heads" : "tails"}`;
+    default: return esc(e.e);
+  }
+}
+
+function mon(p, active) {
+  if (!p) return `<div class="mon"><span class="meta">No Active Pokémon</span></div>`;
+  const pct = Math.max(0, Math.min(100, 100 * p.hp / p.maxHp));
+  const tools = p.tools.length ? ` · ${p.tools.map(esc).join(", ")}` : "";
+  return `<div class="mon${active ? " active" : ""}"><div class="n">${esc(p.name)}</div>
+    <div class="hp" aria-hidden="true"><i style="width:${pct}%"></i></div>
+    <div class="meta">${p.hp}/${p.maxHp} HP · ${p.energy} energy${tools}</div></div>`;
+}
+
+function side(s, who) {
+  const name = who === "agent" ? "Agent (submitted build)" : "Opponent (local Alakazam stand-in)";
+  const cond = s.conditions.length ? ` · ${s.conditions.join(", ")}` : "";
+  return `<div class="side"><h3>${name}<span>${s.prizes} prizes left · hand ${s.hand} · deck ${s.deck}${cond}</span></h3>
+    ${mon(s.active, true)}
+    <div class="bench">${s.bench.map(b => mon(b, false)).join("")}</div>
+    ${s.hand_cards ? `<p class="hand"><strong>Hand:</strong> ${s.hand_cards.map(esc).join(", ")}</p>` : ""}</div>`;
+}
+
+function render() {
+  const s = steps[i], d = s.d, me = D.about.agent_seat;
+  document.getElementById("pos").textContent = `Decision ${i + 1} of ${steps.length} · turn ${s.turn}`;
+  document.getElementById("prev").disabled = i === 0;
+  document.getElementById("next").disabled = i === steps.length - 1;
+  document.querySelectorAll("#turns button").forEach(b =>
+    b.setAttribute("aria-current", String(+b.dataset.turn === s.turn)));
+
+  const ev = d.events_before;
+  document.getElementById("events").innerHTML = ev.length
+    ? ev.map(e => `<li><span class="who ${e.who}">${e.who}</span>${eventText(e)}</li>`).join("")
+    : `<li class="note">No new events since the previous decision.</li>`;
+  const st = d.state;
+  document.getElementById("board").innerHTML = side(st[1 - me], "opponent") + side(st[me], "agent");
+
+  const pos = d.options.filter(o => o.score > 0).map(o => o.score);
+  const max = Math.max(1, ...pos);
+  const chosen = new Set(d.chosen);
+  const rows = d.options.map((o, k) => {
+    const w = o.score > 0 ? Math.max(1, 100 * o.score / max) : 0;
+    const bar = o.score > 0 ? `<div class="sbar" style="width:${w}%"></div>` : `<div class="sbar neg" style="width:6px"></div>`;
+    return `<tr class="${chosen.has(k) ? "chosen" : ""}"><td>${esc(o.label)}${chosen.has(k) ? '<span class="tag fill">chosen</span>' : ""}</td>
+      <td class="barc" aria-hidden="true">${bar}</td><td class="num">${o.score === null ? "–" : o.score}</td></tr>`;
+  }).join("");
+  document.getElementById("decision").innerHTML =
+    `<p class="verdict">${ctxName(d.context)}</p>
+     <table><thead><tr><th>Option</th><th aria-hidden="true"></th><th style="text-align:right">Policy score</th></tr></thead><tbody>${rows}</tbody></table>
+     <p class="note">Scores come from the hand-written policy. Higher is preferred; 0 or less means "only if forced".</p>`;
+
+  const sr = d.search, box = document.getElementById("search");
+  if (!sr || !sr.mean_value) {
+    box.innerHTML = `<p class="note">${d.options.length < 2 ? "Only one legal option." : "The search did not run here; the policy's top-scored option was played."}</p>`;
+  } else {
+    const best = Math.max(...sr.mean_value);
+    const r = sr.candidates.map((c, k) => {
+      const v = sr.mean_value[k];
+      const tags = (k === 0 ? '<span class="tag">policy pick</span>' : "") + (c === sr.picked ? '<span class="tag fill">played</span>' : "");
+      return `<tr class="${c === sr.picked ? "chosen" : ""}"><td>${esc(d.options[c].label)}${tags}</td>
+        <td class="barc" aria-hidden="true"><div class="sbar" style="width:${Math.max(1, v / 10)}%;background:var(--purple)"></div></td>
+        <td class="num">${(v / 10).toFixed(1)}%</td></tr>`;
+    }).join("");
+    const diff = (sr.mean_value[sr.candidates.indexOf(sr.picked)] - sr.mean_value[0]);
+    const verdict = sr.overrode_policy
+      ? `Search overrode the policy: the challenger beat its pick by ${(diff / 10).toFixed(1)} points per world (needed ${(sr.margin_per_world / 10).toFixed(1)}).`
+      : `Search kept the policy's pick${best > sr.mean_value[0] ? `: no challenger cleared the ${(sr.margin_per_world / 10).toFixed(1)}-point margin` : ""}.`;
+    box.innerHTML = `<h2>Whole-turn search over ${sr.worlds} sampled worlds</h2>
+      <p class="verdict">${verdict}</p>
+      <table><thead><tr><th>Candidate first action</th><th aria-hidden="true"></th><th style="text-align:right">Mean est. win</th></tr></thead><tbody>${r}</tbody></table>
+      <p class="note">For each candidate, the agent beam-searches the rest of its turn and the opponent's reply in each sampled world (hidden cards filled in at random), then averages the best leaf value.</p>`;
+  }
+  drawTrace();
+}
+
+function drawTrace() {
+  const el = document.getElementById("trace");
+  const W = Math.max(320, Math.round(el.clientWidth || 1100)), H = 170, L = 44, R = 12, T = 12, B = 30;
+  const n = steps.length;
+  const x = k => L + (n === 1 ? 0 : k / (n - 1) * (W - L - R));
+  const y = v => T + (1 - v / 1000) * (H - T - B);
+  let p = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Agent's estimated win chance at each decision">`;
+  for (const v of [0, 500, 1000]) {
+    p += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="#B3A992" ${v === 500 ? 'stroke-dasharray="3 3"' : ""}/>`;
+    p += `<text x="${L - 8}" y="${y(v) + 4}" font-size="12" fill="#3D372F" text-anchor="end" font-family="Archivo">${v / 10}%</text>`;
+  }
+  let prevTurn = null;
+  steps.forEach((s, k) => {
+    if (s.turn !== prevTurn) {
+      p += `<line x1="${x(k)}" x2="${x(k)}" y1="${T}" y2="${H - B}" stroke="#B3A99288"/>`;
+      p += `<text x="${x(k) + 3}" y="${H - 10}" font-size="12" fill="#3D372F" font-family="Archivo">T${s.turn}</text>`;
+      prevTurn = s.turn;
+    }
+  });
+  const pts = steps.map((s, k) => s.d.position_value == null ? null : `${x(k)},${y(s.d.position_value)}`).filter(Boolean);
+  p += `<polyline points="${pts.join(" ")}" fill="none" stroke="#1F6FB5" stroke-width="2.5"/>`;
+  const cur = steps[i].d.position_value;
+  if (cur != null) {
+    p += `<circle cx="${x(i)}" cy="${y(cur)}" r="6" fill="#1F6FB5" stroke="#F6F2E8" stroke-width="2"/>`;
+    p += `<text x="${Math.min(x(i) + 9, W - 60)}" y="${y(cur) - 9}" font-size="13" font-weight="700" fill="#231F1B" font-family="Archivo">${(cur / 10).toFixed(0)}%</text>`;
+  }
+  el.innerHTML = p + "</svg>";
+}
+
+window.addEventListener("resize", () => { if (steps.length) drawTrace(); });
+
+function go(k) { i = Math.max(0, Math.min(steps.length - 1, k)); render(); }
+
+fetch("demo.json").then(r => r.json()).then(d => {
+  D = d;
+  d.turns.forEach(t => t.decisions.forEach(x => steps.push({turn: t.turn, d: x})));
+  const won = d.result.winner === "agent";
+  document.getElementById("subtitle").textContent =
+    `The submitted agent (${d.about.agent}) against a local stand-in for the Alakazam deck (${d.about.opponent}), ` +
+    `recorded ${d.about.recorded}. The agent ${won ? "won" : d.result.winner === "draw" ? "drew" : "lost"} on turn ${steps[steps.length - 1].turn}. ` +
+    `This is the first game recorded with the final recorder, not a pick.`;
+  const turns = [...new Set(steps.map(s => s.turn))];
+  document.getElementById("turns").innerHTML = turns.map(t =>
+    `<button data-turn="${t}">${t === 0 ? "Setup" : "Turn " + t}</button>`).join("");
+  document.querySelectorAll("#turns button").forEach(b =>
+    b.onclick = () => go(steps.findIndex(s => s.turn === +b.dataset.turn)));
+  document.getElementById("prev").onclick = () => go(i - 1);
+  document.getElementById("next").onclick = () => go(i + 1);
+  document.addEventListener("keydown", e => {
+    if (e.key === "ArrowLeft") go(i - 1);
+    if (e.key === "ArrowRight") go(i + 1);
+  });
+  document.getElementById("foot").innerHTML =
+    `Card and attack names only; no card text or art. Game engine and card data belong to the competition and are not included. ` +
+    `Recorded with <code>tools/record_game.py</code>; schema in <code>docs/replay/SCHEMA.md</code>.`;
+  const start = steps.findIndex(s => s.d.search && s.d.search.overrode_policy);
+  go(new URLSearchParams(location.search).has("start") ? 0 : Math.max(0, start));
+});
+</script>
+</body>
+</html>
