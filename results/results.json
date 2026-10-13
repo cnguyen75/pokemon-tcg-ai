@@ -1,0 +1,1115 @@
+{
+  "local_screens": {
+    "command": "python tools/site_results.py OUT.json ...",
+    "cells": [
+      {
+        "source": "logs/arch_screen.log:1",
+        "agent": "v11",
+        "opponent": "fw_archaludon",
+        "wins": 79,
+        "losses": 125,
+        "games": 204,
+        "win_rate": 38.7,
+        "ci95": [
+          32.3,
+          45.6
+        ],
+        "logged_ci95": [
+          32.3,
+          45.6
+        ],
+        "ci_matches_log": true
+      },
+      {
+        "source": "logs/arch_screen.log:2",
+        "agent": "v11",
+        "opponent": "fw_archaludon",
+        "wins": 69,
+        "losses": 135,
+        "games": 204,
+        "win_rate": 33.8,
+        "ci95": [
+          27.7,
+          40.6
+        ],
+        "logged_ci95": [
+          27.7,
+          40.6
+        ],
+        "ci_matches_log": true
+      },
+      {
+        "source": "logs/arch_screen.log:3",
+        "agent": "v12_arch",
+        "opponent": "fw_archaludon",
+        "wins": 76,
+        "losses": 128,
+        "games": 204,
+        "win_rate": 37.3,
+        "ci95": [
+          30.9,
+          44.1
+        ],
+        "logged_ci95": [
+          30.9,
+          44.1
+        ],
+        "ci_matches_log": true
+      },
+      {
+        "source": "logs/arch_screen.log:4",
+        "agent": "v12_arch",
+        "opponent": "fw_archaludon",
+        "wins": 60,
+        "losses": 144,
+        "games": 204,
+        "win_rate": 29.4,
+        "ci95": [
+          23.6,
+          36.0
+        ],
+        "logged_ci95": [
+          23.6,
+          36.0
+        ],
+        "ci_matches_log": true
+      },
+      {
+        "source": "logs/screen_lucknobs.log:1",
+        "agent": "v12_vm15",
+        "opponent": "lucario1084",
+        "wins": 105,
+        "losses": 99,
+        "games": 204,
+        "win_rate": 51.5,
+        "ci95": [
+          44.6,
+          58.2
+        ],
+        "logged_ci95": [
+          44.6,
+          58.2
+        ],
+        "ci_matches_log": true
+      },
+      {
+        "source": "logs/screen_lucknobs.log:2",
+        "agent": "v12_vm45",
+        "opponent": "lucario1084",
+        "wins": 90,
+        "losses": 114,
+        "games": 204,
+        "win_rate": 44.1,
+        "ci95": [
+          37.5,
+          51.0
+        ],
+        "logged_ci95": [
+          37.5,
+          51.0
+        ],
+        "ci_matches_log": true
+      },
+      {
+        "source": "logs/screen_lucknobs.log:3",
+        "agent": "v12_hprio",
+        "opponent": "lucario1084",
+        "wins": 103,
+        "losses": 101,
+        "games": 204,
+        "win_rate": 50.5,
+        "ci95": [
+          43.7,
+          57.3
+        ],
+        "logged_ci95": [
+          43.7,
+          57.3
+        ],
+        "ci_matches_log": true
+      },
+      {
+        "source": "logs/screen_lucknobs.log:4",
+        "agent": "v12_combo",
+        "opponent": "lucario1084",
+        "wins": 100,
+        "losses": 104,
+        "games": 204,
+        "win_rate": 49.0,
+        "ci95": [
+          42.2,
+          55.8
+        ],
+        "logged_ci95": [
+          42.2,
+          55.8
+        ],
+        "ci_matches_log": true
+      },
+      {
+        "source": "logs/screen_lucknobs.log:5",
+        "agent": "v12_vm8",
+        "opponent": "lucario1084",
+        "wins": 103,
+        "losses": 101,
+        "games": 204,
+        "win_rate": 50.5,
+        "ci95": [
+          43.7,
+          57.3
+        ],
+        "logged_ci95": [
+          43.7,
+          57.3
+        ],
+        "ci_matches_log": true
+      },
+      {
+        "source": "logs/screen_lucknobs.log:6",
+        "agent": "v12_vm15",
+        "opponent": "fw_alakazam",
+        "wins": 135,
+        "losses": 69,
+        "games": 204,
+        "win_rate": 66.2,
+        "ci95": [
+          59.4,
+          72.3
+        ],
+        "logged_ci95": [
+          59.4,
+          72.3
+        ],
+        "ci_matches_log": true
+      },
+      {
+        "source": "logs/screen_lucknobs.log:7",
+        "agent": "v12_vm15",
+        "opponent": "v71_ref",
+        "wins": 94,
+        "losses": 110,
+        "games": 204,
+        "win_rate": 46.1,
+        "ci95": [
+          39.4,
+          52.9
+        ],
+        "logged_ci95": [
+          39.4,
+          52.9
+        ],
+        "ci_matches_log": true
+      },
+      {
+        "source": "logs/screen_lucknobs.log:8",
+        "agent": "v12_vm15",
+        "opponent": "fw_grimm",
+        "wins": 105,
+        "losses": 99,
+        "games": 204,
+        "win_rate": 51.5,
+        "ci95": [
+          44.6,
+          58.2
+        ],
+        "logged_ci95": [
+          44.6,
+          58.2
+        ],
+        "ci_matches_log": true
+      },
+      {
+        "source": "logs/screen_v12.log:5",
+        "agent": "v11",
+        "opponent": "archaludon",
+        "wins": 63,
+        "losses": 141,
+        "games": 204,
+        "win_rate": 30.9,
+        "ci95": [
+          24.9,
+          37.5
+        ],
+        "logged_ci95": [
+          24.9,
+          37.5
+        ],
+        "ci_matches_log": true
+      },
+      {
+        "source": "logs/screen_v12.log:6",
+        "agent": "v11",
+        "opponent": "lucario",
+        "wins": 87,
+        "losses": 117,
+        "games": 204,
+        "win_rate": 42.6,
+        "ci95": [
+          36.1,
+          49.5
+        ],
+        "logged_ci95": [
+          36.1,
+          49.5
+        ],
+        "ci_matches_log": true
+      },
+      {
+        "source": "logs/screen_v12b.log:3",
+        "agent": "v12a",
+        "opponent": "archaludon",
+        "wins": 65,
+        "losses": 139,
+        "games": 204,
+        "win_rate": 31.9,
+        "ci95": [
+          25.9,
+          38.5
+        ],
+        "logged_ci95": [
+          25.9,
+          38.5
+        ],
+        "ci_matches_log": true
+      },
+      {
+        "source": "logs/screen_v12b.log:4",
+        "agent": "v12a",
+        "opponent": "lucario",
+        "wins": 98,
+        "losses": 106,
+        "games": 204,
+        "win_rate": 48.0,
+        "ci95": [
+          41.3,
+          54.9
+        ],
+        "logged_ci95": [
+          41.3,
+          54.9
+        ],
+        "ci_matches_log": true
+      },
+      {
+        "source": "logs/screen_v12b.log:5",
+        "agent": "v12b",
+        "opponent": "archaludon",
+        "wins": 59,
+        "losses": 145,
+        "games": 204,
+        "win_rate": 28.9,
+        "ci95": [
+          23.1,
+          35.5
+        ],
+        "logged_ci95": [
+          23.1,
+          35.5
+        ],
+        "ci_matches_log": true
+      },
+      {
+        "source": "logs/screen_v12b.log:6",
+        "agent": "v12b",
+        "opponent": "lucario",
+        "wins": 101,
+        "losses": 103,
+        "games": 204,
+        "win_rate": 49.5,
+        "ci95": [
+          42.7,
+          56.3
+        ],
+        "logged_ci95": [
+          42.7,
+          56.3
+        ],
+        "ci_matches_log": true
+      },
+      {
+        "source": "logs/screen_v12_rest_cells.log:1",
+        "agent": "v11",
+        "opponent": "alakazam",
+        "wins": 144,
+        "losses": 60,
+        "games": 204,
+        "win_rate": 70.6,
+        "ci95": [
+          64.0,
+          76.4
+        ],
+        "logged_ci95": [
+          64.0,
+          76.4
+        ],
+        "ci_matches_log": true
+      },
+      {
+        "source": "logs/screen_v12_rest_cells.log:2",
+        "agent": "v11",
+        "opponent": "grimm",
+        "wins": 128,
+        "losses": 76,
+        "games": 204,
+        "win_rate": 62.7,
+        "ci95": [
+          55.9,
+          69.1
+        ],
+        "logged_ci95": [
+          55.9,
+          69.1
+        ],
+        "ci_matches_log": true
+      },
+      {
+        "source": "logs/screen_v12_rest_cells.log:3",
+        "agent": "v11",
+        "opponent": "mirror",
+        "wins": 107,
+        "losses": 97,
+        "games": 204,
+        "win_rate": 52.5,
+        "ci95": [
+          45.6,
+          59.2
+        ],
+        "logged_ci95": [
+          45.6,
+          59.2
+        ],
+        "ci_matches_log": true
+      },
+      {
+        "source": "logs/screen_v12_rest_cells.log:4",
+        "agent": "v12a",
+        "opponent": "alakazam",
+        "wins": 130,
+        "losses": 74,
+        "games": 204,
+        "win_rate": 63.7,
+        "ci95": [
+          56.9,
+          70.0
+        ],
+        "logged_ci95": [
+          56.9,
+          70.0
+        ],
+        "ci_matches_log": true
+      },
+      {
+        "source": "logs/screen_v12_rest_cells.log:5",
+        "agent": "v12a",
+        "opponent": "grimm",
+        "wins": 117,
+        "losses": 87,
+        "games": 204,
+        "win_rate": 57.4,
+        "ci95": [
+          50.5,
+          63.9
+        ],
+        "logged_ci95": [
+          50.5,
+          63.9
+        ],
+        "ci_matches_log": true
+      },
+      {
+        "source": "logs/screen_v12_rest_cells.log:6",
+        "agent": "v12a",
+        "opponent": "mirror",
+        "wins": 98,
+        "losses": 106,
+        "games": 204,
+        "win_rate": 48.0,
+        "ci95": [
+          41.3,
+          54.9
+        ],
+        "logged_ci95": [
+          41.3,
+          54.9
+        ],
+        "ci_matches_log": true
+      },
+      {
+        "source": "logs/screen_v12_rest_cells.log:7",
+        "agent": "v12b",
+        "opponent": "alakazam",
+        "wins": 126,
+        "losses": 78,
+        "games": 204,
+        "win_rate": 61.8,
+        "ci95": [
+          54.9,
+          68.2
+        ],
+        "logged_ci95": [
+          54.9,
+          68.2
+        ],
+        "ci_matches_log": true
+      },
+      {
+        "source": "logs/screen_v12_rest_cells.log:8",
+        "agent": "v12b",
+        "opponent": "grimm",
+        "wins": 99,
+        "losses": 105,
+        "games": 204,
+        "win_rate": 48.5,
+        "ci95": [
+          41.8,
+          55.4
+        ],
+        "logged_ci95": [
+          41.8,
+          55.4
+        ],
+        "ci_matches_log": true
+      },
+      {
+        "source": "logs/screen_v12_rest_cells.log:9",
+        "agent": "v12b",
+        "opponent": "mirror",
+        "wins": 111,
+        "losses": 93,
+        "games": 204,
+        "win_rate": 54.4,
+        "ci95": [
+          47.6,
+          61.1
+        ],
+        "logged_ci95": [
+          47.6,
+          61.1
+        ],
+        "ci_matches_log": true
+      },
+      {
+        "source": "logs/screen_v12_rest_cells.log:10",
+        "agent": "v12c",
+        "opponent": "lucario",
+        "wins": 96,
+        "losses": 108,
+        "games": 204,
+        "win_rate": 47.1,
+        "ci95": [
+          40.3,
+          53.9
+        ],
+        "logged_ci95": [
+          40.3,
+          53.9
+        ],
+        "ci_matches_log": true
+      },
+      {
+        "source": "logs/screen_v12_rest_cells.log:11",
+        "agent": "v12c",
+        "opponent": "grimm",
+        "wins": 104,
+        "losses": 100,
+        "games": 204,
+        "win_rate": 51.0,
+        "ci95": [
+          44.2,
+          57.8
+        ],
+        "logged_ci95": [
+          44.2,
+          57.8
+        ],
+        "ci_matches_log": true
+      },
+      {
+        "source": "logs/screen_v12_rest_cells.log:12",
+        "agent": "v12c",
+        "opponent": "alakazam",
+        "wins": 110,
+        "losses": 94,
+        "games": 204,
+        "win_rate": 53.9,
+        "ci95": [
+          47.1,
+          60.6
+        ],
+        "logged_ci95": [
+          47.1,
+          60.6
+        ],
+        "ci_matches_log": true
+      },
+      {
+        "source": "logs/screen_v12_rest_cells.log:13",
+        "agent": "v12c",
+        "opponent": "alakazam",
+        "wins": 135,
+        "losses": 69,
+        "games": 204,
+        "win_rate": 66.2,
+        "ci95": [
+          59.4,
+          72.3
+        ],
+        "logged_ci95": [
+          59.4,
+          72.3
+        ],
+        "ci_matches_log": true
+      },
+      {
+        "source": "logs/screen_v12_rest_cells.log:14",
+        "agent": "v12c",
+        "opponent": "mirror",
+        "wins": 100,
+        "losses": 104,
+        "games": 204,
+        "win_rate": 49.0,
+        "ci95": [
+          42.2,
+          55.8
+        ],
+        "logged_ci95": [
+          42.2,
+          55.8
+        ],
+        "ci_matches_log": true
+      },
+      {
+        "source": "logs/screen_v12_rest_cells.log:15",
+        "agent": "v12c",
+        "opponent": "archaludon",
+        "wins": 69,
+        "losses": 135,
+        "games": 204,
+        "win_rate": 33.8,
+        "ci95": [
+          27.7,
+          40.6
+        ],
+        "logged_ci95": [
+          27.7,
+          40.6
+        ],
+        "ci_matches_log": true
+      }
+    ],
+    "repeated_cells": {
+      "v11 vs fw_archaludon": [
+        38.7,
+        33.8
+      ],
+      "v12_arch vs fw_archaludon": [
+        37.3,
+        29.4
+      ],
+      "v12c vs alakazam": [
+        53.9,
+        66.2
+      ]
+    },
+    "ci95_half_width_at_50pct_204_games": 6.8
+  },
+  "ladder": {
+    "source": "Kaggle submissions list and public leaderboard CSV (see the file's docstring)",
+    "submissions": 38,
+    "copies_per_build": {
+      "v7.1": 2,
+      "v8_judge": 2,
+      "v11_1": 2,
+      "v12_pwr": 18
+    },
+    "builds_first_submission": [
+      {
+        "build": "v1",
+        "submitted": "2026-07-01",
+        "rating": null,
+        "status": "error",
+        "submission_id": 54245077
+      },
+      {
+        "build": "v1.1",
+        "submitted": "2026-07-01",
+        "rating": 547.7,
+        "status": "complete",
+        "submission_id": 54245171
+      },
+      {
+        "build": "v2",
+        "submitted": "2026-07-02",
+        "rating": 624.9,
+        "status": "complete",
+        "submission_id": 54256684
+      },
+      {
+        "build": "v3",
+        "submitted": "2026-07-02",
+        "rating": 689.9,
+        "status": "complete",
+        "submission_id": 54275827
+      },
+      {
+        "build": "v4",
+        "submitted": "2026-07-03",
+        "rating": 750.9,
+        "status": "complete",
+        "submission_id": 54282526
+      },
+      {
+        "build": "v5",
+        "submitted": "2026-07-04",
+        "rating": 780.2,
+        "status": "complete",
+        "submission_id": 54340849
+      },
+      {
+        "build": "v5.1",
+        "submitted": "2026-07-06",
+        "rating": 726.4,
+        "status": "complete",
+        "submission_id": 54401743
+      },
+      {
+        "build": "v5.2",
+        "submitted": "2026-07-07",
+        "rating": 817.6,
+        "status": "complete",
+        "submission_id": 54417316
+      },
+      {
+        "build": "v6",
+        "submitted": "2026-07-07",
+        "rating": 785.0,
+        "status": "complete",
+        "submission_id": 54437524
+      },
+      {
+        "build": "v7",
+        "submitted": "2026-07-09",
+        "rating": 770.7,
+        "status": "complete",
+        "submission_id": 54507705
+      },
+      {
+        "build": "v7.1",
+        "submitted": "2026-07-10",
+        "rating": 769.7,
+        "status": "complete",
+        "submission_id": 54538709
+      },
+      {
+        "build": "v8_grimm",
+        "submitted": "2026-07-13",
+        "rating": 739.8,
+        "status": "complete",
+        "submission_id": 54664225
+      },
+      {
+        "build": "v8_judge",
+        "submitted": "2026-07-14",
+        "rating": 782.7,
+        "status": "complete",
+        "submission_id": 54696175
+      },
+      {
+        "build": "v9_az_r7",
+        "submitted": "2026-07-17",
+        "rating": null,
+        "status": "error",
+        "submission_id": 54792825
+      },
+      {
+        "build": "v10_azval",
+        "submitted": "2026-07-17",
+        "rating": 761.7,
+        "status": "complete",
+        "submission_id": 54793732
+      },
+      {
+        "build": "v11",
+        "submitted": "2026-07-20",
+        "rating": 745.3,
+        "status": "complete",
+        "submission_id": 54842929
+      },
+      {
+        "build": "v11_1",
+        "submitted": "2026-07-24",
+        "rating": 682.7,
+        "status": "complete",
+        "submission_id": 54938517
+      },
+      {
+        "build": "v12_pwr",
+        "submitted": "2026-07-27",
+        "rating": 820.6,
+        "status": "complete",
+        "submission_id": 55018765
+      }
+    ],
+    "all_submissions": [
+      {
+        "build": "v1",
+        "submitted": "2026-07-01",
+        "rating": null
+      },
+      {
+        "build": "v1.1",
+        "submitted": "2026-07-01",
+        "rating": 547.7
+      },
+      {
+        "build": "v2",
+        "submitted": "2026-07-02",
+        "rating": 624.9
+      },
+      {
+        "build": "v3",
+        "submitted": "2026-07-02",
+        "rating": 689.9
+      },
+      {
+        "build": "v4",
+        "submitted": "2026-07-03",
+        "rating": 750.9
+      },
+      {
+        "build": "v5",
+        "submitted": "2026-07-04",
+        "rating": 780.2
+      },
+      {
+        "build": "v5.1",
+        "submitted": "2026-07-06",
+        "rating": 726.4
+      },
+      {
+        "build": "v5.2",
+        "submitted": "2026-07-07",
+        "rating": 817.6
+      },
+      {
+        "build": "v6",
+        "submitted": "2026-07-07",
+        "rating": 785.0
+      },
+      {
+        "build": "v7",
+        "submitted": "2026-07-09",
+        "rating": 770.7
+      },
+      {
+        "build": "v7.1",
+        "submitted": "2026-07-10",
+        "rating": 769.7
+      },
+      {
+        "build": "v8_grimm",
+        "submitted": "2026-07-13",
+        "rating": 739.8
+      },
+      {
+        "build": "v8_judge",
+        "submitted": "2026-07-14",
+        "rating": 782.7
+      },
+      {
+        "build": "v7.1",
+        "submitted": "2026-07-15",
+        "rating": 739.9
+      },
+      {
+        "build": "v9_az_r7",
+        "submitted": "2026-07-17",
+        "rating": null
+      },
+      {
+        "build": "v8_judge",
+        "submitted": "2026-07-17",
+        "rating": 782.2
+      },
+      {
+        "build": "v10_azval",
+        "submitted": "2026-07-17",
+        "rating": 761.7
+      },
+      {
+        "build": "v11",
+        "submitted": "2026-07-20",
+        "rating": 745.3
+      },
+      {
+        "build": "v11_1",
+        "submitted": "2026-07-24",
+        "rating": 682.7
+      },
+      {
+        "build": "v11_1",
+        "submitted": "2026-07-27",
+        "rating": 768.9
+      },
+      {
+        "build": "v12_pwr",
+        "submitted": "2026-07-27",
+        "rating": 820.6
+      },
+      {
+        "build": "v12_pwr",
+        "submitted": "2026-07-29",
+        "rating": 676.3
+      },
+      {
+        "build": "v12_pwr",
+        "submitted": "2026-07-29",
+        "rating": 773.0
+      },
+      {
+        "build": "v12_pwr",
+        "submitted": "2026-07-31",
+        "rating": 725.0
+      },
+      {
+        "build": "v12_pwr",
+        "submitted": "2026-08-02",
+        "rating": 698.7
+      },
+      {
+        "build": "v12_pwr",
+        "submitted": "2026-08-04",
+        "rating": 738.9
+      },
+      {
+        "build": "v12_pwr",
+        "submitted": "2026-08-05",
+        "rating": 685.9
+      },
+      {
+        "build": "v12_pwr",
+        "submitted": "2026-08-05",
+        "rating": 677.4
+      },
+      {
+        "build": "v12_pwr",
+        "submitted": "2026-08-06",
+        "rating": 561.1
+      },
+      {
+        "build": "v12_pwr",
+        "submitted": "2026-08-06",
+        "rating": 879.8
+      },
+      {
+        "build": "v12_pwr",
+        "submitted": "2026-08-06",
+        "rating": 725.3
+      },
+      {
+        "build": "v12_pwr",
+        "submitted": "2026-08-06",
+        "rating": 643.6
+      },
+      {
+        "build": "v12_pwr",
+        "submitted": "2026-08-07",
+        "rating": 681.0
+      },
+      {
+        "build": "v12_pwr",
+        "submitted": "2026-08-07",
+        "rating": 635.9
+      },
+      {
+        "build": "v12_pwr",
+        "submitted": "2026-08-08",
+        "rating": 674.0
+      },
+      {
+        "build": "v12_pwr",
+        "submitted": "2026-08-08",
+        "rating": 705.4
+      },
+      {
+        "build": "v12_pwr",
+        "submitted": "2026-08-10",
+        "rating": 701.2
+      },
+      {
+        "build": "v12_pwr",
+        "submitted": "2026-08-10",
+        "rating": 614.4
+      }
+    ],
+    "highest_rating_any_submission": 879.8,
+    "leaderboard": {
+      "rank": 2166,
+      "teams": 6807,
+      "score": 701.2,
+      "file": "pokemon-tcg-ai-battle-publicleaderboard-2026-10-13T17:04:21.csv"
+    }
+  },
+  "matchups": {
+    "54842929": {
+      "episodes_listed": 205,
+      "ladder_wins_all_listed": 101,
+      "episodes_with_cached_replay": 123,
+      "by_archetype": {
+        "Abra / Alakazam / Kadabra": {
+          "wins": 9,
+          "games": 21,
+          "win_rate": 42.9,
+          "ci95": [
+            24.5,
+            63.5
+          ]
+        },
+        "Mega Lucario ex / Riolu / Solrock": {
+          "wins": 6,
+          "games": 17,
+          "win_rate": 35.3,
+          "ci95": [
+            17.3,
+            58.7
+          ]
+        },
+        "Archaludon ex / Cinderace / Duraludon": {
+          "wins": 2,
+          "games": 13,
+          "win_rate": 15.4,
+          "ci95": [
+            4.3,
+            42.2
+          ]
+        },
+        "Abra / Dunsparce / Kadabra": {
+          "wins": 5,
+          "games": 9,
+          "win_rate": 55.6,
+          "ci95": [
+            26.7,
+            81.1
+          ]
+        },
+        "Dragapult ex / Drakloak / Dreepy": {
+          "wins": 5,
+          "games": 9,
+          "win_rate": 55.6,
+          "ci95": [
+            26.7,
+            81.1
+          ]
+        },
+        "Crustle / Dwebble / Great Tusk": {
+          "wins": 7,
+          "games": 7,
+          "win_rate": 100.0,
+          "ci95": [
+            64.6,
+            100.0
+          ]
+        },
+        "Marnie's Impidimp / Marnie's Morgrem / Munkidori": {
+          "wins": 3,
+          "games": 6,
+          "win_rate": 50.0,
+          "ci95": [
+            18.8,
+            81.2
+          ]
+        },
+        "Cinderace / Mega Starmie ex / Staryu": {
+          "wins": 4,
+          "games": 6,
+          "win_rate": 66.7,
+          "ci95": [
+            30.0,
+            90.3
+          ]
+        }
+      }
+    },
+    "55018765": {
+      "episodes_listed": 94,
+      "ladder_wins_all_listed": 56,
+      "episodes_with_cached_replay": 93,
+      "by_archetype": {
+        "Abra / Alakazam / Kadabra": {
+          "wins": 7,
+          "games": 13,
+          "win_rate": 53.8,
+          "ci95": [
+            29.1,
+            76.8
+          ]
+        },
+        "Mega Lucario ex / Riolu / Solrock": {
+          "wins": 5,
+          "games": 12,
+          "win_rate": 41.7,
+          "ci95": [
+            19.3,
+            68.0
+          ]
+        },
+        "Marnie's Impidimp / Marnie's Morgrem / Munkidori": {
+          "wins": 6,
+          "games": 12,
+          "win_rate": 50.0,
+          "ci95": [
+            25.4,
+            74.6
+          ]
+        },
+        "Crustle / Dwebble / Mega Kangaskhan ex": {
+          "wins": 7,
+          "games": 8,
+          "win_rate": 87.5,
+          "ci95": [
+            52.9,
+            97.8
+          ]
+        },
+        "Archaludon ex / Cinderace / Duraludon": {
+          "wins": 2,
+          "games": 8,
+          "win_rate": 25.0,
+          "ci95": [
+            7.1,
+            59.1
+          ]
+        },
+        "Cinderace / Mega Starmie ex / Staryu": {
+          "wins": 3,
+          "games": 6,
+          "win_rate": 50.0,
+          "ci95": [
+            18.8,
+            81.2
+          ]
+        },
+        "Dragapult ex / Drakloak / Dreepy": {
+          "wins": 3,
+          "games": 5,
+          "win_rate": 60.0,
+          "ci95": [
+            23.1,
+            88.2
+          ]
+        }
+      }
+    }
+  },
+  "value_head": {
+    "checkpoint": "baselines/v12_pwr/az_value_net.pt",
+    "parameters": 697602,
+    "d_model": 256,
+    "n_blocks": 3,
+    "value_auc": 0.736,
+    "sp_value_auc": 0.8069,
+    "policy_top1": 0.3265,
+    "policy_top3": 0.6569,
+    "sp_agree": 0.595
+  }
+}

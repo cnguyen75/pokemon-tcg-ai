@@ -72,10 +72,12 @@ def local_screens():
 def ladder(sub_csv, lb_csv, team):
     rows = list(csv.DictReader(open(sub_csv)))
     rows.sort(key=lambda r: r["date"])
-    builds, copies = [], Counter()
+    builds, every, copies = [], [], Counter()
     for r in rows:
         name = r["fileName"].replace("submission_", "").replace(".tar.gz", "")
         copies[name] += 1
+        every.append({"build": name, "submitted": r["date"][:10],
+                      "rating": float(r["publicScore"]) if r["publicScore"] else None})
         if copies[name] > 1:
             continue
         score = float(r["publicScore"]) if r["publicScore"] else None
@@ -90,6 +92,7 @@ def ladder(sub_csv, lb_csv, team):
         "submissions": len(rows),
         "copies_per_build": {k: v for k, v in copies.items() if v > 1},
         "builds_first_submission": builds,
+        "all_submissions": every,
         "highest_rating_any_submission": max(scored),
         "leaderboard": {"rank": int(mine["Rank"]), "teams": len(lb),
                         "score": float(mine["Score"]), "file": os.path.basename(lb_csv)},
@@ -139,6 +142,17 @@ def matchups(ep_dir, submission_ids):
     return out
 
 
+def value_head(path):
+    """Evaluation metrics saved inside the value-head checkpoint by train/train_az2.py."""
+    import torch
+    ck = torch.load(path, map_location="cpu", weights_only=False)
+    n_params = sum(v.numel() for v in ck["state_dict"].values())
+    keys = ("value_auc", "sp_value_auc", "policy_top1", "policy_top3", "sp_agree")
+    return {"checkpoint": os.path.relpath(path, REPO), "parameters": n_params,
+            "d_model": ck["d_model"], "n_blocks": int(ck.get("n_blocks", 0)),
+            **{k: round(float(ck[k]), 4) for k in keys if k in ck}}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("out")
@@ -147,12 +161,15 @@ def main():
     ap.add_argument("--team", required=True, help="Kaggle username on the team row")
     ap.add_argument("--episode-lists", required=True)
     ap.add_argument("--matchup-submissions", default="54842929,55018765")
+    ap.add_argument("--value-checkpoint", default=os.path.join(REPO, "baselines", "v12_pwr",
+                                                                 "az_value_net.pt"))
     args = ap.parse_args()
     res = {
         "local_screens": local_screens(),
         "ladder": ladder(args.submissions, args.leaderboard, args.team),
         "matchups": matchups(args.episode_lists,
                              [int(s) for s in args.matchup_submissions.split(",")]),
+        "value_head": value_head(args.value_checkpoint),
     }
     with open(args.out, "w") as f:
         json.dump(res, f, indent=2, ensure_ascii=False)
