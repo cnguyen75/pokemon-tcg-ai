@@ -231,7 +231,7 @@ def _looks_like_code(body: str) -> bool:
 def check_prose(path: Path, text: str) -> list[Finding]:
     findings = []
     for number, line in enumerate(text.split("\n"), start=1):
-        lowered = line.lower()
+        lowered = _strip_literal_spans(line).lower()
         for word in BANNED_WORDS:
             if re.search(rf"\b{re.escape(word)}\b", lowered):
                 findings.append(Finding(path, number, "banned-word", word))
@@ -241,6 +241,12 @@ def check_prose(path: Path, text: str) -> list[Finding]:
         if re.match(r"^#+ ", line) and _is_title_case(line):
             findings.append(Finding(path, number, "heading-case", "use sentence case"))
     return findings
+
+
+def _strip_literal_spans(line: str) -> str:
+    """Drops code spans and single-asterisk italics, which quote names rather than use words."""
+    without_code = re.sub(r"`[^`]*`", "", line)
+    return re.sub(r"(?<!\*)\*[^*\n]+\*(?!\*)", "", without_code)
 
 
 def _is_title_case(heading: str) -> bool:
