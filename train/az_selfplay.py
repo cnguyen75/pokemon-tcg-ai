@@ -28,15 +28,17 @@ Writes train/data/az_selfplay_<tag>_<seed>.npz  with ragged option blocks:
   ep (n_dec,)  side (n_dec,)
 Reports games/sec, games/hr, and total (state, visit-policy, value) records.
 """
+
 import argparse
 import importlib.util as _ilu
+from multiprocessing import Pool
 import os
 import random
 import sys
 import time
-from multiprocessing import Pool
 
 import numpy as np
+
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CG_HOME = os.path.join(REPO, "engine_build", "test_cg")
@@ -71,8 +73,9 @@ def _load_opp(path):
     for m in ("value_features", "value_net", "deck_configs", "policy_net", "features"):
         sys.modules.pop(m, None)
     sys.path.insert(0, path)
-    spec = _ilu.spec_from_file_location("opp_" + os.path.basename(path),
-                                        os.path.join(path, "main.py"))
+    spec = _ilu.spec_from_file_location(
+        "opp_" + os.path.basename(path), os.path.join(path, "main.py")
+    )
     mod = _ilu.module_from_spec(spec)
     cwd = os.getcwd()
     os.chdir(path)
@@ -92,12 +95,12 @@ def play_worker(args):
     (n_games, seed, sims, budget, deadline, temp, opp_kind) = args
     os.environ["CG_SEED"] = str(seed)
     az = _load_az(sims, budget, deadline)
-    from cg.game import battle_start, battle_select, battle_finish
     from cg.api import to_observation_class
+    from cg.game import battle_finish, battle_select, battle_start
 
     _t_start = time.time()
     rng = random.Random(seed)
-    np_rng = np.random.RandomState(seed & 0x7fffffff)
+    np_rng = np.random.RandomState(seed & 0x7FFFFFFF)
 
     # az internals we reuse
     to_obs = to_observation_class
@@ -133,8 +136,7 @@ def play_worker(args):
         sel = obs.select
         # reset per-move timer that mcts_run relies on
         az._G["move_t0"] = time.time()
-        if (az.NET_OK and az.SEARCH_OK
-                and obs.search_begin_input is not None and is_main(sel)):
+        if az.NET_OK and az.SEARCH_OK and obs.search_begin_input is not None and is_main(sel):
             t0 = time.time()
             try:
                 root, prior, nsim = mcts_run(obs, me)
@@ -150,8 +152,9 @@ def play_worker(args):
             # record raw feats + normalized visit distribution
             try:
                 xs = np.asarray(state_features(cur, me, CARD, ATK), dtype=np.float32)
-                xo = np.asarray([option_features(o, cur, me, CARD, ATK)
-                                 for o in opts], dtype=np.float32)
+                xo = np.asarray(
+                    [option_features(o, cur, me, CARD, ATK) for o in opts], dtype=np.float32
+                )
             except Exception:
                 xs = None
             if xs is not None and len(xo) == len(N):
@@ -167,27 +170,28 @@ def play_worker(args):
             else:
                 pw = np.power(N, 1.0 / temp)
                 s = pw.sum()
-                a = (int(np_rng.choice(len(N), p=pw / s)) if s > 0
-                     else int(np.argmax(N)))
+                a = int(np_rng.choice(len(N), p=pw / s)) if s > 0 else int(np.argmax(N))
             return [a]
         return scripted(obs)
 
     for g in range(n_games):
         if g % 10 == 0:
-            print(f"[w seed{seed}] game {g}/{n_games} "
-                  f"({len(gids)} recs, {time.time()-_t_start:.0f}s)", flush=True)
+            print(
+                f"[w seed{seed}] game {g}/{n_games} "
+                f"({len(gids)} recs, {time.time() - _t_start:.0f}s)",
+                flush=True,
+            )
         gid = seed * 1_000_000 + g
         az_index = g % 2
-        obs, start = battle_start(az_deck if az_index == 0 else opp_deck,
-                                  az_deck if az_index == 1 else opp_deck)
+        obs, start = battle_start(
+            az_deck if az_index == 0 else opp_deck, az_deck if az_index == 1 else opp_deck
+        )
         if start.errorPlayer >= 0:
             raise RuntimeError(f"deck error p{start.errorPlayer} t{start.errorType}")
         rec_lo = len(gids)
         while obs["current"]["result"] < 0:
             idx = obs["current"]["yourIndex"]
-            if idx == az_index:
-                obs = battle_select(az_agent_recording(obs, idx, gid))
-            elif opp_kind == "self":
+            if idx == az_index or opp_kind == "self":
                 obs = battle_select(az_agent_recording(obs, idx, gid))
             else:
                 obs = battle_select(opp_mod.agent(obs))
@@ -205,26 +209,42 @@ def play_worker(args):
         gid_result[gid] = r
 
     # build outcome labels (1 if acting side won)
-    ys = np.array([1 if gid_result.get(gid) == side else 0
-                   for gid, side in zip(gids, sides)], dtype=np.int8)
-    return (Xs, Xo_blocks, pis, ys, np.asarray(gids, dtype=np.int64),
-            np.asarray(sides, dtype=np.int8), n_games, n_draw,
-            az_move_wall, az_moves)
+    ys = np.array(
+        [1 if gid_result.get(gid) == side else 0 for gid, side in zip(gids, sides)], dtype=np.int8
+    )
+    return (
+        Xs,
+        Xo_blocks,
+        pis,
+        ys,
+        np.asarray(gids, dtype=np.int64),
+        np.asarray(sides, dtype=np.int8),
+        n_games,
+        n_draw,
+        az_move_wall,
+        az_moves,
+    )
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--games", type=int, default=200)
     ap.add_argument("--sims", type=int, default=80)
-    ap.add_argument("--budget", type=float, default=8.0,
-                    help="search time budget per move (s); high so sims cap binds")
+    ap.add_argument(
+        "--budget",
+        type=float,
+        default=8.0,
+        help="search time budget per move (s); high so sims cap binds",
+    )
     ap.add_argument("--deadline", type=float, default=12.0)
-    ap.add_argument("--temp", type=float, default=0.8,
-                    help="visit-count sampling temperature for played move")
+    ap.add_argument(
+        "--temp", type=float, default=0.8, help="visit-count sampling temperature for played move"
+    )
     ap.add_argument("--procs", type=int, default=max(os.cpu_count() - 2, 1))
     ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--opp", default="self",
-                    help="'self' or a baseline agent dir (e.g. baselines/fw_grimm)")
+    ap.add_argument(
+        "--opp", default="self", help="'self' or a baseline agent dir (e.g. baselines/fw_grimm)"
+    )
     ap.add_argument("--out-tag", default="r1")
     args = ap.parse_args()
 
@@ -234,8 +254,10 @@ def main():
 
     per = -(-args.games // args.procs)
     base = args.seed * 100_000
-    jobs = [(per, base + i, args.sims, args.budget, args.deadline,
-             args.temp, opp_kind) for i in range(args.procs)]
+    jobs = [
+        (per, base + i, args.sims, args.budget, args.deadline, args.temp, opp_kind)
+        for i in range(args.procs)
+    ]
     t0 = time.time()
     with Pool(args.procs) as pool:
         outs = pool.map(play_worker, jobs)
@@ -257,28 +279,33 @@ def main():
     offs = np.zeros(n_dec + 1, dtype=np.int64)
     for i, b in enumerate(Xo_blocks):
         offs[i + 1] = offs[i] + len(b)
-    X_opt = (np.concatenate(Xo_blocks, axis=0).astype(np.float32)
-             if Xo_blocks else np.zeros((0, 38), np.float32))
-    pi = (np.concatenate(pis, axis=0).astype(np.float32)
-          if pis else np.zeros(0, np.float32))
-    Xs_arr = (np.stack(Xs).astype(np.float32) if Xs
-              else np.zeros((0, 101), np.float32))
+    X_opt = (
+        np.concatenate(Xo_blocks, axis=0).astype(np.float32)
+        if Xo_blocks
+        else np.zeros((0, 38), np.float32)
+    )
+    pi = np.concatenate(pis, axis=0).astype(np.float32) if pis else np.zeros(0, np.float32)
+    Xs_arr = np.stack(Xs).astype(np.float32) if Xs else np.zeros((0, 101), np.float32)
 
     tag = f"{args.out_tag}_{args.opp if args.opp == 'self' else os.path.basename(opp_kind)}"
     out = os.path.join(REPO, "train", "data", f"az_selfplay_{tag}_{args.seed}.npz")
     os.makedirs(os.path.dirname(out), exist_ok=True)
-    np.savez_compressed(out, Xs=Xs_arr, X_opt=X_opt, offs=offs, pi=pi,
-                        y=ys, ep=gids, side=sides)
+    np.savez_compressed(out, Xs=Xs_arr, X_opt=X_opt, offs=offs, pi=pi, y=ys, ep=gids, side=sides)
 
     gph = n_games / dt * 3600 if dt else 0
     avg_move = move_wall / max(n_moves, 1)
-    print(f"[az_selfplay {tag} seed{args.seed}] {n_games} games "
-          f"({n_draw} draws) in {dt:.0f}s | {n_games/dt:.3f} g/s "
-          f"= {gph:.0f} games/hr ({args.procs} procs, {args.sims} sims)",
-          flush=True)
-    print(f"  records: {n_dec} MAIN decisions, {X_opt.shape[0]} option rows, "
-          f"value y-mean {ys.mean():.3f} | {avg_move*1000:.0f} ms/MCTS-move "
-          f"-> {out}", flush=True)
+    print(
+        f"[az_selfplay {tag} seed{args.seed}] {n_games} games "
+        f"({n_draw} draws) in {dt:.0f}s | {n_games / dt:.3f} g/s "
+        f"= {gph:.0f} games/hr ({args.procs} procs, {args.sims} sims)",
+        flush=True,
+    )
+    print(
+        f"  records: {n_dec} MAIN decisions, {X_opt.shape[0]} option rows, "
+        f"value y-mean {ys.mean():.3f} | {avg_move * 1000:.0f} ms/MCTS-move "
+        f"-> {out}",
+        flush=True,
+    )
 
 
 if __name__ == "__main__":

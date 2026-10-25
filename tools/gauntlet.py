@@ -41,15 +41,18 @@ GAPS (no strong pilot yet -> NOT in panel; gauntlet under-weights these):
     baseline pilot here.
 ------------------------------------------------------------------------------
 """
+
 import argparse
 import math
+from multiprocessing import Pool
 import os
 import sys
 import time
-from multiprocessing import Pool
+
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from league import play_games, wilson  # noqa: E402
+
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -87,11 +90,11 @@ def B(name):
 # Mirror slot = v71_ref: ladder "starmie" opponents are literally our own
 # older submissions + same-list users (45.5% ladder WR ~ a true mirror).
 PANEL = {
-    "lucario":      (B("lucario1084"),   0.277),
-    "alakazam":     (B("fw_alakazam"),   0.258),
-    "archaludon":   (B("fw_archaludon"), 0.248),
-    "grimmsnarl":   (B("fw_grimm"),      0.114),
-    "mirror(v71)":  (B("v71_ref"),       0.104),
+    "lucario": (B("lucario1084"), 0.277),
+    "alakazam": (B("fw_alakazam"), 0.258),
+    "archaludon": (B("fw_archaludon"), 0.248),
+    "grimmsnarl": (B("fw_grimm"), 0.114),
+    "mirror(v71)": (B("v71_ref"), 0.104),
 }
 
 
@@ -117,10 +120,8 @@ def main():
 
     target = os.path.abspath(args.agent_dir)
     name = os.path.basename(target.rstrip("/"))
-    print(f"GAUNTLET: {name}  ({args.games_per} games/opponent, "
-          f"{args.procs} procs)\n")
-    print(f"{'opponent':18s} {'weight':>6s} {'W-L-D':>12s} {'WR%':>6s} "
-          f"{'95% CI':>16s}")
+    print(f"GAUNTLET: {name}  ({args.games_per} games/opponent, {args.procs} procs)\n")
+    print(f"{'opponent':18s} {'weight':>6s} {'W-L-D':>12s} {'WR%':>6s} {'95% CI':>16s}")
 
     t0 = time.time()
     weighted_sum = 0.0
@@ -135,17 +136,23 @@ def main():
         rows.append((opp, weight, w, l, d, p, lo, hi))
         weighted_sum += weight * p
         total_w += weight
-        print(f"{opp:18s} {weight:6.3f} {f'{w}-{l}-{d}':>12s} "
-              f"{p*100:6.1f} {f'[{lo*100:.1f},{hi*100:.1f}]':>16s}", flush=True)
+        print(
+            f"{opp:18s} {weight:6.3f} {f'{w}-{l}-{d}':>12s} "
+            f"{p * 100:6.1f} {f'[{lo * 100:.1f},{hi * 100:.1f}]':>16s}",
+            flush=True,
+        )
 
     meta_wr = weighted_sum / total_w if total_w else 0.0
     dt = time.time() - t0
-    print(f"\nMETA-WEIGHTED WIN RATE: {meta_wr*100:.1f}%   "
-          f"(panel weight {total_w:.3f}, {dt:.0f}s)")
-    print("panel = pilots weighted by OUR 775-810 band shares "
-          "(episodes/v71games+v7games, 2026-07-12); gaps not represented: "
-          "crustle 14% (100% WR), dragapult 12% (90%), garchomp 3% "
-          "(fiction pilot dropped), trevenant/kangaskhan/bellibolt <2.5%.")
+    print(
+        f"\nMETA-WEIGHTED WIN RATE: {meta_wr * 100:.1f}%   (panel weight {total_w:.3f}, {dt:.0f}s)"
+    )
+    print(
+        "panel = pilots weighted by OUR 775-810 band shares "
+        "(episodes/v71games+v7games, 2026-07-12); gaps not represented: "
+        "crustle 14% (100% WR), dragapult 12% (90%), garchomp 3% "
+        "(fiction pilot dropped), trevenant/kangaskhan/bellibolt <2.5%."
+    )
 
 
 if __name__ == "__main__":

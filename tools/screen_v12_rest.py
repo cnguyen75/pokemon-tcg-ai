@@ -10,14 +10,17 @@ delta can be computed over the full gauntlet panel.
 Usage:
   uv run --python 3.13 --with numpy,torch python tools/screen_v12_rest.py
 """
+
 import math
+from multiprocessing import Pool
 import os
 import sys
 import time
-from multiprocessing import Pool
+
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from league import play_games, wilson  # noqa: E402
+
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -26,11 +29,14 @@ def B(name):
     return os.path.join(REPO, "baselines", name)
 
 
-AGENTS = {"v11": B("v11"), "v12a": B("v12a"), "v12b": B("v12b"),
-          "v12c": B("v12c")}
-OPPS = {"alakazam": B("fw_alakazam"), "grimm": B("fw_grimm"),
-        "mirror": B("v71_ref"), "archaludon": B("fw_archaludon"),
-        "lucario": B("lucario1084")}
+AGENTS = {"v11": B("v11"), "v12a": B("v12a"), "v12b": B("v12b"), "v12c": B("v12c")}
+OPPS = {
+    "alakazam": B("fw_alakazam"),
+    "grimm": B("fw_grimm"),
+    "mirror": B("v71_ref"),
+    "archaludon": B("fw_archaludon"),
+    "lucario": B("lucario1084"),
+}
 GAMES = 200
 SEED = 7000
 PROCS = max((os.cpu_count() or 4) - 2, 1)
@@ -54,10 +60,13 @@ def main():
             w = sum(r == 1 for r in res)
             l = sum(r == -1 for r in res)
             _, lo, hi = wilson(w, w + l)
-            print(f"{aname:5s} vs {oname:10s}: {w}-{l} "
-                  f"({100 * w / max(w + l, 1):.1f}%) "
-                  f"CI[{100 * lo:.1f},{100 * hi:.1f}]  "
-                  f"{len(res)}g {time.time() - t0:.0f}s", flush=True)
+            print(
+                f"{aname:5s} vs {oname:10s}: {w}-{l} "
+                f"({100 * w / max(w + l, 1):.1f}%) "
+                f"CI[{100 * lo:.1f},{100 * hi:.1f}]  "
+                f"{len(res)}g {time.time() - t0:.0f}s",
+                flush=True,
+            )
     print("SCREEN_DONE", flush=True)
 
 

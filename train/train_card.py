@@ -9,14 +9,16 @@ Holds out 15% BY EPISODE (seed 7). Compares, on the SAME holdout:
 Metrics: pooled AUC + per-episode AUC (paired t-stat, win%), permutation
 importance of card-feature groups, inference cost.
 """
+
+import copy
 import os
 import sys
-import copy
 import time
 
 import numpy as np
 import torch
 import torch.nn as nn
+
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(REPO, "train", "data")
@@ -39,9 +41,10 @@ def auc(y, s):
         while j + 1 < len(s) and s_sorted[j + 1] == s_sorted[i]:
             j += 1
         if j > i:
-            ranks[order[i:j + 1]] = (i + j) / 2.0 + 1
+            ranks[order[i : j + 1]] = (i + j) / 2.0 + 1
         i = j + 1
-    n1 = y.sum(); n0 = len(y) - n1
+    n1 = y.sum()
+    n0 = len(y) - n1
     if n1 == 0 or n0 == 0:
         return 0.5
     return (ranks[y == 1].sum() - n1 * (n1 + 1) / 2) / (n1 * n0)
@@ -53,7 +56,8 @@ def logloss(y, p):
 
 
 def split_by_episode(ep, rng, frac):
-    uniq = np.unique(ep); rng.shuffle(uniq)
+    uniq = np.unique(ep)
+    rng.shuffle(uniq)
     n_hold = max(int(len(uniq) * frac), 1)
     hold = set(uniq[:n_hold].tolist())
     mask = np.fromiter((e in hold for e in ep), dtype=bool, count=len(ep))
@@ -81,15 +85,19 @@ def build_mlp(indim, arch, dropout):
 
 
 def train_mlp(Xtr, ytr, Xva, yva, arch, dropout, epochs, tag, wd=3e-4):
-    mean = Xtr.mean(axis=0); std = Xtr.std(axis=0); std[std < 1e-6] = 1.0
+    mean = Xtr.mean(axis=0)
+    std = Xtr.std(axis=0)
+    std[std < 1e-6] = 1.0
     Xtr_n = ((Xtr - mean) / std).astype(np.float32)
     Xva_n = ((Xva - mean) / std).astype(np.float32)
     model = build_mlp(Xtr.shape[1], arch, dropout)
     opt = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=wd)
     sched = torch.optim.lr_scheduler.StepLR(opt, step_size=6, gamma=0.4)
     lossf = nn.BCEWithLogitsLoss()
-    Xt = torch.from_numpy(Xtr_n); yt = torch.from_numpy(ytr.astype(np.float32))
-    n = len(yt); bs = 8192
+    Xt = torch.from_numpy(Xtr_n)
+    yt = torch.from_numpy(ytr.astype(np.float32))
+    n = len(yt)
+    bs = 8192
 
     def predict(Xn, m=None):
         m = m or model
@@ -97,52 +105,66 @@ def train_mlp(Xtr, ytr, Xva, yva, arch, dropout, epochs, tag, wd=3e-4):
         with torch.no_grad():
             out = []
             for i in range(0, len(Xn), 65536):
-                out.append(torch.sigmoid(
-                    m(torch.from_numpy(Xn[i:i + 65536])).squeeze(-1)).numpy())
+                out.append(
+                    torch.sigmoid(m(torch.from_numpy(Xn[i : i + 65536])).squeeze(-1)).numpy()
+                )
         return np.concatenate(out) if out else np.empty(0)
 
     best_val, best_state, best_ep = -1.0, None, -1
     for epoch in range(epochs):
         model.train()
-        perm = torch.randperm(n); tot = 0.0
+        perm = torch.randperm(n)
+        tot = 0.0
         for i in range(0, n, bs):
-            idx = perm[i:i + bs]
+            idx = perm[i : i + bs]
             opt.zero_grad()
             out = model(Xt[idx]).squeeze(-1)
             loss = lossf(out, yt[idx])
-            loss.backward(); opt.step(); tot += loss.item() * len(idx)
+            loss.backward()
+            opt.step()
+            tot += loss.item() * len(idx)
         sched.step()
-        pv = predict(Xva_n); va = auc(yva, pv)
+        pv = predict(Xva_n)
+        va = auc(yva, pv)
         if va > best_val:
             best_val, best_ep = va, epoch
             best_state = copy.deepcopy(model.state_dict())
-        print(f"  [{tag}] epoch {epoch}: train {tot/n:.4f} val-auc {va:.4f}",
-              flush=True)
+        print(f"  [{tag}] epoch {epoch}: train {tot / n:.4f} val-auc {va:.4f}", flush=True)
     model.load_state_dict(best_state)
     print(f"  [{tag}] best epoch {best_ep} val-auc {best_val:.4f}", flush=True)
     return model, mean, std, predict
 
 
 def main():
-    rng = np.random.default_rng(SEED); torch.manual_seed(SEED)
+    rng = np.random.default_rng(SEED)
+    torch.manual_seed(SEED)
     d = np.load(os.path.join(DATA, "episodes_card.npz"))
     Xbase = d["Xbase"].astype(np.float32)
     Xcard = d["Xcard"].astype(np.float32)
-    y = d["y"].astype(np.int64); ep = d["ep"]; hc = d["hc"]
+    y = d["y"].astype(np.int64)
+    ep = d["ep"]
+    hc = d["hc"]
     Xfull = np.hstack([Xbase, Xcard])
-    print(f"rows {len(y)}  base {Xbase.shape[1]}  card {Xcard.shape[1]}  "
-          f"full {Xfull.shape[1]}  eps {len(np.unique(ep))}  wr {y.mean():.3f}")
+    print(
+        f"rows {len(y)}  base {Xbase.shape[1]}  card {Xcard.shape[1]}  "
+        f"full {Xfull.shape[1]}  eps {len(np.unique(ep))}  wr {y.mean():.3f}"
+    )
 
     tr, ho = split_by_episode(ep, rng, HOLDOUT)
     # validation carved from training episodes for early stopping
-    tr_eps = np.unique(ep[tr]); rng.shuffle(tr_eps)
-    val_set = set(tr_eps[:max(int(len(tr_eps) * 0.15), 1)].tolist())
+    tr_eps = np.unique(ep[tr])
+    rng.shuffle(tr_eps)
+    val_set = set(tr_eps[: max(int(len(tr_eps) * 0.15), 1)].tolist())
     va = tr & np.fromiter((e in val_set for e in ep), dtype=bool, count=len(ep))
     tr = tr & ~va
-    print(f"train rows {tr.sum()}  val rows {va.sum()}  holdout rows {ho.sum()}  "
-          f"holdout eps {len(np.unique(ep[ho]))}")
+    print(
+        f"train rows {tr.sum()}  val rows {va.sum()}  holdout rows {ho.sum()}  "
+        f"holdout eps {len(np.unique(ep[ho]))}"
+    )
 
-    yho = y[ho]; hcho = hc[ho]; epho = ep[ho]
+    yho = y[ho]
+    hcho = hc[ho]
+    epho = ep[ho]
 
     def per_ep_auc_mean(p):
         vals = []
@@ -150,7 +172,8 @@ def main():
         for i, e in enumerate(ep[va]):
             seen.setdefault(e, []).append(i)
         for e, idx in seen.items():
-            idx = np.asarray(idx); yy = y[va][idx]
+            idx = np.asarray(idx)
+            yy = y[va][idx]
             if yy.min() == yy.max():
                 continue
             vals.append(auc(yy, p[idx]))
@@ -159,13 +182,14 @@ def main():
     # (a) CARD net: sweep regularization, pick best by per-episode val AUC
     print("\n--- training CARD net (base+card): reg sweep ---")
     best = None
-    for arch, dp, wd in [(ARCH, DROPOUT, 3e-4),
-                         ([256, 128], 0.35, 1e-3),
-                         ([256, 128], 0.5, 3e-3),
-                         ([128], 0.5, 3e-3)]:
-        tag = f"card_{'x'.join(map(str,arch))}_dp{dp}_wd{wd}"
-        m, mn, sd, pr = train_mlp(Xfull[tr], y[tr], Xfull[va], y[va],
-                                  arch, dp, EPOCHS, tag, wd=wd)
+    for arch, dp, wd in [
+        (ARCH, DROPOUT, 3e-4),
+        ([256, 128], 0.35, 1e-3),
+        ([256, 128], 0.5, 3e-3),
+        ([128], 0.5, 3e-3),
+    ]:
+        tag = f"card_{'x'.join(map(str, arch))}_dp{dp}_wd{wd}"
+        m, mn, sd, pr = train_mlp(Xfull[tr], y[tr], Xfull[va], y[va], arch, dp, EPOCHS, tag, wd=wd)
         pv = pr(((Xfull[va] - mn) / sd).astype(np.float32))
         vscore = per_ep_auc_mean(pv)
         print(f"  >> {tag}: per-ep VAL auc {vscore:.4f}")
@@ -178,12 +202,13 @@ def main():
     # (b) BASE net (control: same data & split, base features only). Sweep too.
     print("\n--- training BASE net (control, base only): reg sweep ---")
     bbest = None
-    for arch, dp, wd in [([64, 32], 0.15, 3e-4),
-                         ([128, 64], 0.2, 3e-4),
-                         ([256, 128, 64], 0.25, 3e-4)]:
-        tag = f"base_{'x'.join(map(str,arch))}"
-        m, mn, sd, pr = train_mlp(Xbase[tr], y[tr], Xbase[va], y[va],
-                                  arch, dp, EPOCHS, tag)
+    for arch, dp, wd in [
+        ([64, 32], 0.15, 3e-4),
+        ([128, 64], 0.2, 3e-4),
+        ([256, 128, 64], 0.25, 3e-4),
+    ]:
+        tag = f"base_{'x'.join(map(str, arch))}"
+        m, mn, sd, pr = train_mlp(Xbase[tr], y[tr], Xbase[va], y[va], arch, dp, EPOCHS, tag)
         pv = pr(((Xbase[va] - mn) / sd).astype(np.float32))
         vscore = per_ep_auc_mean(pv)
         print(f"  >> {tag}: per-ep VAL auc {vscore:.4f}")
@@ -199,8 +224,12 @@ def main():
 
     # ---- pooled metrics
     print("\n=== POOLED holdout metrics ===")
-    for name, p in (("card", p_card), ("base(ctrl)", p_base),
-                    ("shipped", p_ship), ("handcraft", p_hc)):
+    for name, p in (
+        ("card", p_card),
+        ("base(ctrl)", p_base),
+        ("shipped", p_ship),
+        ("handcraft", p_hc),
+    ):
         ll = logloss(yho, p) if name != "handcraft" else float("nan")
         print(f"  {name:11s} auc {auc(yho, p):.4f}  logloss {ll:.4f}")
 
@@ -219,8 +248,10 @@ def main():
             out.append((e, auc(yy, p[idx])))
         return dict(out)
 
-    pe_card = per_ep(p_card); pe_base = per_ep(p_base)
-    pe_ship = per_ep(p_ship); pe_hc = per_ep(p_hc)
+    pe_card = per_ep(p_card)
+    pe_base = per_ep(p_base)
+    pe_ship = per_ep(p_ship)
+    pe_hc = per_ep(p_hc)
     common = sorted(set(pe_card) & set(pe_ship) & set(pe_hc) & set(pe_base))
     a_card = np.array([pe_card[e] for e in common])
     a_base = np.array([pe_base[e] for e in common])
@@ -235,8 +266,10 @@ def main():
     def paired(a, b, la, lb):
         dd = a - b
         t = dd.mean() / (dd.std(ddof=1) / np.sqrt(len(dd)) + 1e-12)
-        print(f"  {la} - {lb}: delta {dd.mean():+.4f}  t={t:.2f}  "
-              f"{la} wins {(dd > 0).mean()*100:.0f}%")
+        print(
+            f"  {la} - {lb}: delta {dd.mean():+.4f}  t={t:.2f}  "
+            f"{la} wins {(dd > 0).mean() * 100:.0f}%"
+        )
 
     print("\n=== DECISIVE paired comparisons (per-episode) ===")
     paired(a_card, a_ship, "card", "ship")
@@ -247,6 +280,7 @@ def main():
     # ---- permutation importance of card-feature GROUPS (by zone)
     import card_features as cf
     from cg.api import all_card_data
+
     CARD = {c.cardId: c for c in all_card_data()}
     VOCAB = cf.load_vocab()
     W = len(VOCAB) + cf.N_OTHER
@@ -257,10 +291,14 @@ def main():
     rng2 = np.random.default_rng(11)
     off = Xbase.shape[1]  # card block starts here in Xfull
     # whole card block
-    for label, cols in ([("ALL_CARD", list(range(off, Xfull.shape[1])))]
-                        + [(f"zone_{z}", list(range(off + zi*W, off + (zi+1)*W)))
-                           for zi, z in enumerate(zones)]
-                        + [("ALL_BASE", list(range(0, off)))]):
+    for label, cols in (
+        [("ALL_CARD", list(range(off, Xfull.shape[1])))]
+        + [
+            (f"zone_{z}", list(range(off + zi * W, off + (zi + 1) * W)))
+            for zi, z in enumerate(zones)
+        ]
+        + [("ALL_BASE", list(range(0, off)))]
+    ):
         Xp = Xho_full.copy()
         for c in cols:
             rng2.shuffle(Xp[:, c])
@@ -269,8 +307,11 @@ def main():
 
     # ---- inference cost of the card extractor (end-to-end feature build)
     print("\n=== inference cost (card_only_feats extractor) ===")
-    import json, glob
+    import glob
+    import json
+
     from cg.api import all_attack
+
     ATK = {a.attackId: a for a in all_attack()}
     IDX = cf.make_index(VOCAB)
     # grab some real states

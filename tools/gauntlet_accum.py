@@ -11,17 +11,20 @@ Usage:
 
 Env passed through to the agent (e.g. CG_A2_POLICY=1 CG_A2_POLICY_TOPK=2).
 """
+
 import argparse
 import json
 import math
+from multiprocessing import Pool
 import os
 import sys
 import time
-from multiprocessing import Pool
+
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from league import play_games, wilson  # noqa: E402
 from gauntlet import PANEL  # noqa: E402
+from league import play_games, wilson  # noqa: E402
+
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT_DIR = os.path.join(REPO, "runs", "policy_gauntlet")
@@ -41,9 +44,12 @@ def main():
     os.makedirs(OUT_DIR, exist_ok=True)
     out_path = os.path.join(OUT_DIR, f"{args.tag}.json")
 
-    state = {"tag": args.tag, "agent": target, "target_per": args.target_per,
-             "opps": {opp: {"w": 0, "l": 0, "d": 0, "weight": wt}
-                      for opp, (_, wt) in PANEL.items()}}
+    state = {
+        "tag": args.tag,
+        "agent": target,
+        "target_per": args.target_per,
+        "opps": {opp: {"w": 0, "l": 0, "d": 0, "weight": wt} for opp, (_, wt) in PANEL.items()},
+    }
     if os.path.exists(out_path):
         try:
             prev = json.load(open(out_path))
@@ -56,8 +62,11 @@ def main():
     seed = args.seed_base
     while True:
         # pick the opponent with the fewest completed decisive games
-        need = [(opp, o) for opp, o in state["opps"].items()
-                if (o["w"] + o["l"] + o["d"]) < args.target_per]
+        need = [
+            (opp, o)
+            for opp, o in state["opps"].items()
+            if (o["w"] + o["l"] + o["d"]) < args.target_per
+        ]
         if not need:
             break
         # run one chunk for each under-target opponent, round-robin
@@ -67,8 +76,7 @@ def main():
             opp_dir, _wt = PANEL[opp]
             per = math.ceil(n / args.procs)
             seed += 1
-            jobs = [(target, opp_dir, per, seed * 100 + i)
-                    for i in range(args.procs)]
+            jobs = [(target, opp_dir, per, seed * 100 + i) for i in range(args.procs)]
             with Pool(args.procs) as pool:
                 outs = pool.map(play_games, jobs)
             results = [r for rs, _ in outs for r in rs][:n]
@@ -78,9 +86,12 @@ def main():
             state["elapsed"] = time.time() - t0
             json.dump(state, open(out_path, "w"), indent=1)
             tot = sum(x["w"] + x["l"] + x["d"] for x in state["opps"].values())
-            print(f"[{args.tag}] {opp:18s} "
-                  f"{o['w']}-{o['l']}-{o['d']} "
-                  f"(total {tot}, {state['elapsed']:.0f}s)", flush=True)
+            print(
+                f"[{args.tag}] {opp:18s} "
+                f"{o['w']}-{o['l']}-{o['d']} "
+                f"(total {tot}, {state['elapsed']:.0f}s)",
+                flush=True,
+            )
 
     # final report
     print(f"\n=== {args.tag} FINAL ===", flush=True)
@@ -91,13 +102,15 @@ def main():
         wt = o["weight"]
         wsum += wt * p
         wtot += wt
-        print(f"{opp:18s} w={wt:.3f} {o['w']}-{o['l']}-{o['d']} "
-              f"WR {p*100:5.1f}% [{lo*100:.1f},{hi*100:.1f}]", flush=True)
+        print(
+            f"{opp:18s} w={wt:.3f} {o['w']}-{o['l']}-{o['d']} "
+            f"WR {p * 100:5.1f}% [{lo * 100:.1f},{hi * 100:.1f}]",
+            flush=True,
+        )
     meta = wsum / wtot if wtot else 0.0
     state["meta_wr"] = meta
     json.dump(state, open(out_path, "w"), indent=1)
-    print(f"META-WEIGHTED WR: {meta*100:.2f}%  ({state.get('elapsed',0):.0f}s)",
-          flush=True)
+    print(f"META-WEIGHTED WR: {meta * 100:.2f}%  ({state.get('elapsed', 0):.0f}s)", flush=True)
 
 
 if __name__ == "__main__":

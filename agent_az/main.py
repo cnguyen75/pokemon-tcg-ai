@@ -23,12 +23,12 @@ Determinized PUCT-MCTS (IS-MCTS style):
 
   uv run --python 3.13 --with torch --with numpy python tools/gauntlet.py agent_az
 """
+
 import math
 import os
-import random
 import sys
 import time
-from collections import Counter, defaultdict
+
 
 AGENT_DIR = "/kaggle_simulations/agent"
 if not os.path.isdir(os.path.join(AGENT_DIR, "cg")):
@@ -40,9 +40,6 @@ if AGENT_DIR not in sys.path:
     sys.path.insert(0, AGENT_DIR)
 REPO = os.path.dirname(AGENT_DIR)
 
-from cg.api import (SelectType, SelectContext, to_observation_class,  # noqa: E402
-                    all_card_data, all_attack)
-
 # ---- scripted policy + determinization ----
 # For a SELF-CONTAINED Kaggle submission, agent_az bundles agent2's scripted
 # Policy (choose(), begin_world, DECK) + its helpers (deck_configs.py,
@@ -50,6 +47,16 @@ from cg.api import (SelectType, SelectContext, to_observation_class,  # noqa: E4
 # bundled copy first. If it is absent (older checkout), fall back to the sibling
 # agent2/ directory so local dev / self-play still works.
 import importlib.util as _ilu  # noqa: E402
+
+from cg.api import (  # noqa: E402
+    SelectContext,
+    SelectType,
+    all_attack,
+    all_card_data,
+    to_observation_class,
+)
+
+
 _SCRIPTED_BUNDLE = os.path.join(AGENT_DIR, "scripted")
 if os.path.isfile(os.path.join(_SCRIPTED_BUNDLE, "scripted_policy.py")):
     _a2_path = os.path.join(_SCRIPTED_BUNDLE, "scripted_policy.py")
@@ -73,7 +80,8 @@ Policy = _a2.Policy
 begin_world = _a2.begin_world
 DECK = list(_a2.DECK)
 SEARCH_OK = _a2.SEARCH_OK
-from cg.api import search_step, search_end  # noqa: E402
+from cg.api import search_end, search_step  # noqa: E402
+
 
 CARD = {c.cardId: c for c in all_card_data()}
 ATK = {a.attackId: a for a in all_attack()}
@@ -82,43 +90,47 @@ import features as feats  # noqa: E402
 
 # ---- network ----
 import numpy as np  # noqa: E402
+
+
 NET = None
 NET_OK = False
 _NORM = None
 try:
-    import torch
     from az_net import AZNet
+    import torch
+
     _ckpt_path = os.path.join(AGENT_DIR, "az_net.pt")
     _ck = torch.load(_ckpt_path, map_location="cpu", weights_only=False)
-    NET = AZNet(_ck["d_state"], _ck["d_opt"], d_model=_ck["d_model"],
-                n_blocks=int(_ck.get("n_blocks", 0)))
+    NET = AZNet(
+        _ck["d_state"], _ck["d_opt"], d_model=_ck["d_model"], n_blocks=int(_ck.get("n_blocks", 0))
+    )
     NET.load_state_dict(_ck["state_dict"])
     NET.eval()
     torch.set_num_threads(1)
-    _NORM = {k: np.asarray(_ck[k], dtype=np.float32)
-             for k in ("s_mu", "s_sd", "o_mu", "o_sd")}
+    _NORM = {k: np.asarray(_ck[k], dtype=np.float32) for k in ("s_mu", "s_sd", "o_mu", "o_sd")}
     NET_OK = True
 except Exception as _e:  # pragma: no cover
     NET_OK = False
 
 # ---- search hyperparameters (env-overridable) ----
-MOVE_DEADLINE = float(os.environ.get("CG_AZ_DEADLINE", "2.2"))   # hard per-move (s)
-SEARCH_BUDGET = float(os.environ.get("CG_AZ_BUDGET", "1.6"))     # search time/move (s)
+MOVE_DEADLINE = float(os.environ.get("CG_AZ_DEADLINE", "2.2"))  # hard per-move (s)
+SEARCH_BUDGET = float(os.environ.get("CG_AZ_BUDGET", "1.6"))  # search time/move (s)
 MAX_SIMS = int(os.environ.get("CG_AZ_SIMS", "240"))
 C_PUCT = float(os.environ.get("CG_AZ_CPUCT", "1.5"))
-ROLLOUT_DEPTH = int(os.environ.get("CG_AZ_ROLL_DEPTH", "2"))     # opp turns modeled
+ROLLOUT_DEPTH = int(os.environ.get("CG_AZ_ROLL_DEPTH", "2"))  # opp turns modeled
 PANIC_RESERVE = 60.0
 
-_STATS = {"moves": 0, "sims": 0, "search_moves": 0, "t": 0.0,
-          "max_move": 0.0, "fallbacks": 0}
+_STATS = {"moves": 0, "sims": 0, "search_moves": 0, "t": 0.0, "max_move": 0.0, "fallbacks": 0}
 
 
 def _is_main_pick(sel):
-    return (sel is not None
-            and sel.type == int(SelectType.MAIN)
-            and sel.context == int(SelectContext.MAIN)
-            and sel.maxCount == 1
-            and len(sel.option or []) >= 2)
+    return (
+        sel is not None
+        and sel.type == int(SelectType.MAIN)
+        and sel.context == int(SelectContext.MAIN)
+        and sel.maxCount == 1
+        and len(sel.option or []) >= 2
+    )
 
 
 def _fallback_choice(sel):
@@ -133,8 +145,9 @@ def _net_eval(cur, me, options):
     """(prior over options np(K,), value in [0,1]) from the shared net."""
     xs = np.asarray(feats.state_features(cur, me, CARD, ATK), dtype=np.float32)
     xs = (xs - _NORM["s_mu"]) / _NORM["s_sd"]
-    xo = np.asarray([feats.option_features(o, cur, me, CARD, ATK)
-                     for o in options], dtype=np.float32)
+    xo = np.asarray(
+        [feats.option_features(o, cur, me, CARD, ATK) for o in options], dtype=np.float32
+    )
     xo = (xo - _NORM["o_mu"]) / _NORM["o_sd"]
     probs, v = NET.eval_leaf(torch.from_numpy(xs), torch.from_numpy(xo))
     return probs.numpy(), float(v)
@@ -147,9 +160,9 @@ class Node:
     __slots__ = ("P", "N", "W", "n_opts")
 
     def __init__(self, prior, n_opts):
-        self.P = prior            # np(K,) prior over options
-        self.N = np.zeros(n_opts, dtype=np.float64)   # visit count / child
-        self.W = np.zeros(n_opts, dtype=np.float64)   # total value / child
+        self.P = prior  # np(K,) prior over options
+        self.N = np.zeros(n_opts, dtype=np.float64)  # visit count / child
+        self.W = np.zeros(n_opts, dtype=np.float64)  # total value / child
         self.n_opts = n_opts
 
     def select(self):
@@ -222,8 +235,7 @@ def _simulate(root_obs, me, root_opts, root_node, tree, deadline):
                 else:
                     # not at a MAIN node: value-only via a 2-option dummy is
                     # unnecessary; use net value on current state options if any
-                    opts = (st.observation.select.option
-                            if st.observation.select else [])
+                    opts = st.observation.select.option if st.observation.select else []
                     if opts:
                         _, v = _net_eval(cur, me, opts)
                     else:
@@ -332,8 +344,13 @@ def _agent_inner(obs_dict: dict) -> list[int]:
         low_time = isinstance(overage, (int, float)) and overage < PANIC_RESERVE
 
         # MCTS only on MAIN single-pick nodes with the net available + time
-        if (NET_OK and SEARCH_OK and not low_time
-                and obs.search_begin_input is not None and _is_main_pick(sel)):
+        if (
+            NET_OK
+            and SEARCH_OK
+            and not low_time
+            and obs.search_begin_input is not None
+            and _is_main_pick(sel)
+        ):
             return mcts_choice(obs, me)
         # everything else: scripted policy (sub-picks, coins, setup, multi-pick)
         _STATS["fallbacks"] += 1

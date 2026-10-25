@@ -19,18 +19,29 @@ stadium/energy/unknown) for ids not in the vocab. Multi-hot/count, MLP-friendly.
 build_vocab() computes the vocab from replay dirs; card_extract() produces
 base(100) + card features. Everything is plain python + injected CARD/ATK db.
 """
-import os
-import sys
+
 import glob
 import json
+import os
+import sys
+
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(REPO, "agent2"))
-import value_features as vf  # the 100-feat base extractor (== agent2 live)
+import value_features as vf  # the 100-feat base extractor (== agent2 live)  # noqa: E402
+
 
 # card categories for the "other" buckets (CardType enum in cg.api)
-_CAT_NAMES = ["pokemon", "item", "tool", "supporter", "stadium",
-              "basic_energy", "special_energy", "unknown"]
+_CAT_NAMES = [
+    "pokemon",
+    "item",
+    "tool",
+    "supporter",
+    "stadium",
+    "basic_energy",
+    "special_energy",
+    "unknown",
+]
 N_OTHER = len(_CAT_NAMES)
 _ZONES = ["my_hand", "my_board", "my_discard", "op_board", "op_discard"]
 
@@ -57,22 +68,24 @@ def _poke_ids_with_attach(ps, CARD):
     """All revealed card ids on a player's board: pokemon + attached energy +
     tools + pre-evolution cards (active and bench)."""
     ids = []
+
     def add_poke(p):
         if p is None:
             return
         ids.append(_g(p, "id", 0))
-        for c in (_g(p, "energyCards", []) or []):
+        for c in _g(p, "energyCards", []) or []:
             if c is not None:
                 ids.append(_g(c, "id", 0))
-        for c in (_g(p, "tools", []) or []):
+        for c in _g(p, "tools", []) or []:
             if c is not None:
                 ids.append(_g(c, "id", 0))
-        for c in (_g(p, "preEvolution", []) or []):
+        for c in _g(p, "preEvolution", []) or []:
             if c is not None:
                 ids.append(_g(c, "id", 0))
-    for p in (_g(ps, "active", []) or []):
+
+    for p in _g(ps, "active", []) or []:
         add_poke(p)
-    for p in (_g(ps, "bench", []) or []):
+    for p in _g(ps, "bench", []) or []:
         add_poke(p)
     return ids
 
@@ -104,6 +117,7 @@ def zone_ids(cur, me, CARD):
 def build_vocab(dirs, CARD, top_n=300):
     """Count card-id frequency across all replays in `dirs`, keep the top_n."""
     from collections import Counter
+
     cnt = Counter()
     files = []
     for dpath in dirs:

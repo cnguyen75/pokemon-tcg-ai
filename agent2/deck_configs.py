@@ -20,15 +20,44 @@ Determination, 1229 Wally's Compassion.
 """
 
 GRIMM_DECK = (
-    [7] * 10 + [104] * 2 + [112] * 4 + [646] * 4 + [647] * 3 + [648] * 3
-    + [860] * 2 + [1079] * 3 + [1080] + [1086] * 4 + [1097] * 3 + [1152] * 4
-    + [1161] * 2 + [1182] * 2 + [1219] * 4 + [1227] * 4 + [1231] + [1259] * 4
+    [7] * 10
+    + [104] * 2
+    + [112] * 4
+    + [646] * 4
+    + [647] * 3
+    + [648] * 3
+    + [860] * 2
+    + [1079] * 3
+    + [1080]
+    + [1086] * 4
+    + [1097] * 3
+    + [1152] * 4
+    + [1161] * 2
+    + [1182] * 2
+    + [1219] * 4
+    + [1227] * 4
+    + [1231]
+    + [1259] * 4
 )
 
 STARMIE_DECK = (
-    [3] * 9 + [17] * 4 + [666] * 4 + [1030] * 4 + [1031] * 4
-    + [1086] * 4 + [1097] * 2 + [1120] * 4 + [1121] + [1122] * 4 + [1145] * 3
-    + [1159] + [1182] * 2 + [1189] * 4 + [1225] * 2 + [1227] * 4 + [1229] * 4
+    [3] * 9
+    + [17] * 4
+    + [666] * 4
+    + [1030] * 4
+    + [1031] * 4
+    + [1086] * 4
+    + [1097] * 2
+    + [1120] * 4
+    + [1121]
+    + [1122] * 4
+    + [1145] * 3
+    + [1159]
+    + [1182] * 2
+    + [1189] * 4
+    + [1225] * 2
+    + [1227] * 4
+    + [1229] * 4
 )
 
 # Archaludon ex (metal tempo), 2026-07-09: EXACT dominant ladder list from the
@@ -37,9 +66,21 @@ STARMIE_DECK = (
 # Raging Hammer OHKO tech), 169 Duraludon, 190 Archaludon ex, 666 Cinderace
 # (Turbo Flare engine), 1147 Jumbo Ice Cream, 1244 Full Metal Lab.
 ARCHALUDON_DECK = (
-    [8] * 11 + [57] + [169] * 4 + [190] * 4 + [666] * 4 + [1097] * 3
-    + [1121] * 4 + [1122] * 4 + [1147] * 4 + [1152] * 4 + [1159]
-    + [1182] * 4 + [1185] * 4 + [1227] * 4 + [1244] * 4
+    [8] * 11
+    + [57]
+    + [169] * 4
+    + [190] * 4
+    + [666] * 4
+    + [1097] * 3
+    + [1121] * 4
+    + [1122] * 4
+    + [1147] * 4
+    + [1152] * 4
+    + [1159]
+    + [1182] * 4
+    + [1185] * 4
+    + [1227] * 4
+    + [1244] * 4
 )
 
 # Crustle/Mega Kangaskhan wall, 2026-07-16: EXACT dominant list from the daily
@@ -48,9 +89,25 @@ ARCHALUDON_DECK = (
 # Mega Kangaskhan draws 2/turn active, Rapid-Fire Combo 200+coins. Sustain
 # shell: 4x Jumbo Ice Cream, Cape, Mist/Spiky Energy, 4x Xerosic hand-cut.
 KANGA_DECK = (
-    [1] + [11] * 4 + [14] * 4 + [18] * 4 + [343] + [344] * 4 + [345] * 4
-    + [756] * 4 + [1086] * 4 + [1087] + [1122] * 4 + [1123] * 4 + [1147] * 4
-    + [1159] + [1182] * 2 + [1197] * 4 + [1225] * 4 + [1227] * 4 + [1264] * 2
+    [1]
+    + [11] * 4
+    + [14] * 4
+    + [18] * 4
+    + [343]
+    + [344] * 4
+    + [345] * 4
+    + [756] * 4
+    + [1086] * 4
+    + [1087]
+    + [1122] * 4
+    + [1123] * 4
+    + [1147] * 4
+    + [1159]
+    + [1182] * 2
+    + [1197] * 4
+    + [1225] * 4
+    + [1227] * 4
+    + [1264] * 2
 )
 
 # Dragapult ex, 2026-07-19: LumenLiquidity's rising top-pool list (18g 56%;
@@ -58,10 +115,31 @@ KANGA_DECK = (
 # Phantom Dive (aid 154): 200 + 6 counters spread on our BENCH — kills the
 # benched Staryu rebuild line. 2-prize attacker vs our 3-prize Mega.
 DRAGAPULT_DECK = (
-    [2] * 4 + [5] * 3 + [7] + [112] + [119] * 4 + [120] * 4 + [121] * 3
-    + [131] * 2 + [132] * 2 + [133] + [140] + [235] + [791] + [1071] + [1080]
-    + [1086] * 4 + [1097] * 2 + [1120] * 3 + [1121] * 4 + [1152] * 4
-    + [1182] * 3 + [1198] * 3 + [1227] * 4 + [1231] + [1256] * 2
+    [2] * 4
+    + [5] * 3
+    + [7]
+    + [112]
+    + [119] * 4
+    + [120] * 4
+    + [121] * 3
+    + [131] * 2
+    + [132] * 2
+    + [133]
+    + [140]
+    + [235]
+    + [791]
+    + [1071]
+    + [1080]
+    + [1086] * 4
+    + [1097] * 2
+    + [1120] * 3
+    + [1121] * 4
+    + [1152] * 4
+    + [1182] * 3
+    + [1198] * 3
+    + [1227] * 4
+    + [1231]
+    + [1256] * 2
 )
 
 DECK_CONFIGS = {
@@ -76,10 +154,20 @@ DECK_CONFIGS = {
         "energy_route": [(121, 2), (120, 2), (133, 3)],
         "attacker_value": {121: 100, 120: 40, 133: 35, 119: 10},
         "fetch_prio": {
-            121: 90, 120: 80, 119: 70, 1086: 70, 1121: 55, 1198: 60,
-            2: 45, 5: 45, 1227: 40, 1182: 45, 1152: 35, 1097: 30,
+            121: 90,
+            120: 80,
+            119: 70,
+            1086: 70,
+            1121: 55,
+            1198: 60,
+            2: 45,
+            5: 45,
+            1227: 40,
+            1182: 45,
+            1152: 35,
+            1097: 30,
         },
-        "attack_bonus": {154: 80},        # Phantom Dive: spread wins races
+        "attack_bonus": {154: 80},  # Phantom Dive: spread wins races
         "bench_snipe": {154: 60},
         "supporter_base": {1198: 6500, 1227: 6000, 1231: 5500, 1182: -1},
         "search_matchup": {"default": True},
@@ -97,9 +185,21 @@ DECK_CONFIGS = {
         "tool_route": {1159: {756: 100, 345: 80}},
         "attacker_value": {345: 100, 756: 90, 344: 15, 343: 10},
         "fetch_prio": {
-            345: 90, 756: 80, 344: 75, 1086: 70, 1225: 60, 1147: 55,
-            1197: 50, 18: 45, 1182: 45, 1159: 45, 11: 40, 14: 40,
-            1227: 40, 1123: 35, 1122: 35,
+            345: 90,
+            756: 80,
+            344: 75,
+            1086: 70,
+            1225: 60,
+            1147: 55,
+            1197: 50,
+            18: 45,
+            1182: 45,
+            1159: 45,
+            11: 40,
+            14: 40,
+            1227: 40,
+            1123: 35,
+            1122: 35,
         },
         "supporter_base": {1225: 6500, 1227: 6000, 1197: 6800, 1182: -1},
         "search_matchup": {"default": True},
@@ -129,16 +229,28 @@ DECK_CONFIGS = {
         "tool_route": {1159: {190: 100, 169: 40}},
         "attacker_value": {190: 100, 169: 45, 666: 35, 57: 5},
         "fetch_prio": {
-            190: 90, 169: 80, 8: 50, 666: 45, 57: 50,
-            1147: 55, 1244: 60, 1185: 55, 1121: 45, 1122: 35,
-            1152: 45, 1097: 35, 1182: 45, 1227: 40, 1159: 40,
+            190: 90,
+            169: 80,
+            8: 50,
+            666: 45,
+            57: 50,
+            1147: 55,
+            1244: 60,
+            1185: 55,
+            1121: 45,
+            1122: 35,
+            1152: 45,
+            1097: 35,
+            1182: 45,
+            1227: 40,
+            1159: 40,
         },
         # 965 Turbo Flare gets the generic bench-deficit bonus; 253 Metal
         # Defender is the bread-and-butter; 224 Raging Hammer damage scaling
         # is computed in eff_damage (RAGE_ATTACKS).
         "attack_bonus": {965: 80, 253: 10},
         "supporter_base": {1185: 7200, 1227: 6000, 1182: -1},
-        "discard_energy_ok": True,   # Assemble Alloy feeds from the discard
+        "discard_energy_ok": True,  # Assemble Alloy feeds from the discard
         "search_matchup": {"default": True},
     },
     "grimmsnarl": {
@@ -161,13 +273,28 @@ DECK_CONFIGS = {
         "attacker_value": {648: 100, 646: 45, 647: 42, 112: 22, 104: 25, 860: 8},
         # base desirability of drawing/fetching each card into hand
         "fetch_prio": {
-            648: 90, 1079: 85, 646: 80, 647: 55, 112: 60, 7: 40,
-            1086: 70, 1259: 65, 1219: 55, 1182: 45, 1227: 40, 1231: 60,
-            1097: 30, 1152: 35, 1161: 25, 104: 30, 860: 25, 1080: 30,
+            648: 90,
+            1079: 85,
+            646: 80,
+            647: 55,
+            112: 60,
+            7: 40,
+            1086: 70,
+            1259: 65,
+            1219: 55,
+            1182: 45,
+            1227: 40,
+            1231: 60,
+            1097: 30,
+            1152: 35,
+            1161: 25,
+            104: 30,
+            860: 25,
+            1080: 30,
         },
-        "attack_bonus": {937: 60, 934: 5},   # Shadow Bullet bench snipe
+        "attack_bonus": {937: 60, 934: 5},  # Shadow Bullet bench snipe
         "bench_snipe": {937: 30},
-        "ability_tech": {860},               # Froslass line only vs ability decks
+        "ability_tech": {860},  # Froslass line only vs ability decks
         "supporter_base": {1219: 7000, 1231: 7500, 1227: 6000, 1182: -1},
         # per-archetype determinized-search gate (set empirically)
         "search_matchup": {"default": True},
@@ -190,9 +317,23 @@ DECK_CONFIGS = {
         "tool_route": {1159: {1031: 100, 1030: 30, 666: 20}},
         "attacker_value": {1031: 100, 666: 50, 1030: 15},
         "fetch_prio": {
-            1031: 90, 1030: 75, 1145: 70, 1189: 55, 17: 65, 3: 45,
-            1086: 65, 1225: 60, 1227: 40, 1229: 35, 1122: 35, 1121: 40,
-            1120: 30, 1097: 30, 1182: 45, 1159: 45, 666: 20,
+            1031: 90,
+            1030: 75,
+            1145: 70,
+            1189: 55,
+            17: 65,
+            3: 45,
+            1086: 65,
+            1225: 60,
+            1227: 40,
+            1229: 35,
+            1122: 35,
+            1121: 40,
+            1120: 30,
+            1097: 30,
+            1182: 45,
+            1159: 45,
+            666: 20,
         },
         "attack_bonus": {965: 80, 1487: 40, 1488: 20},  # Turbo Flare accel
         "bench_snipe": {1487: 50},
@@ -217,7 +358,7 @@ DECK_CONFIGS = {
         "matchup_overrides": {
             "lucario": {
                 "fetch_prio": {1229: 70, 1159: 75, 1120: 55},
-                                # Wally's Compassion undoes a Mega Brave: keep one banked
+                # Wally's Compassion undoes a Mega Brave: keep one banked
                 "gear_bank": 1229,
                 # search-override margin (win-prob pts/world, x10). The race
                 # vs lucario is decided by config discipline (Cape/Wally/
@@ -263,12 +404,11 @@ DECK_CONFIGS = {
             "archaludon": {
                 "attack_bonus": {965: 80, 1487: 0, 1488: 55},
                 "bench_snipe": {1487: 0},
-                "fetch_prio": {3: 58, 17: 70, 1031: 92, 1030: 80,
-                               1120: 55, 1182: 52, 1229: 72},
+                "fetch_prio": {3: 58, 17: 70, 1031: 92, 1030: 80, 1120: 55, 1182: 52, 1229: 72},
                 # Pokegear digs/banks Hilda: the direct energy fetch is the
                 # drought-breaker in this matchup (Nebula cadence is the game)
                 "gear_bank": 1229,  # was 1225 (Hilda) -- NOT IN JUDGE DECK, made
-                                    # Pokegear dead here since v11 (7/22)
+                # Pokegear dead here since v11 (7/22)
                 # Boss-stall: a 2-turn Jetting kill on a gusted Duraludon /
                 # Relicanth / Cinderace beats chipping the healing wall
                 "gust_2turn": True,

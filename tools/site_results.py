@@ -20,19 +20,28 @@ Parts:
   ladder         each distinct build's Kaggle rating and the team's leaderboard row
   matchups       per-archetype ladder win rates from cached replays
 """
+
 import argparse
+from collections import Counter, defaultdict
 import csv
 import glob
 import json
 import math
 import os
 import re
-from collections import Counter, defaultdict
+
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-LOGS = ["logs/arch_screen.log", "logs/screen_lucknobs.log", "logs/screen_v12.log",
-        "logs/screen_v12b.log", "logs/screen_v12_rest_cells.log"]
-CELL = re.compile(r"^(\S+)\s+vs\s+(\S+?)\s*:\s+(\d+)-(\d+) \(([\d.]+)%\) CI\[([\d.]+),([\d.]+)\]\s+(\d+)g")
+LOGS = [
+    "logs/arch_screen.log",
+    "logs/screen_lucknobs.log",
+    "logs/screen_v12.log",
+    "logs/screen_v12b.log",
+    "logs/screen_v12_rest_cells.log",
+]
+CELL = re.compile(
+    r"^(\S+)\s+vs\s+(\S+?)\s*:\s+(\d+)-(\d+) \(([\d.]+)%\) CI\[([\d.]+),([\d.]+)\]\s+(\d+)g"
+)
 
 
 def wilson(w, n, z=1.96):
@@ -53,11 +62,20 @@ def local_screens():
             a, b, w, l, pct, lo, hi, n = m.groups()
             w, l, n = int(w), int(l), int(n)
             ci = wilson(w, w + l)
-            cells.append({"source": f"{path}:{i}", "agent": a, "opponent": b,
-                          "wins": w, "losses": l, "games": n,
-                          "win_rate": round(100 * w / (w + l), 1), "ci95": ci,
-                          "logged_ci95": [float(lo), float(hi)],
-                          "ci_matches_log": ci == [float(lo), float(hi)]})
+            cells.append(
+                {
+                    "source": f"{path}:{i}",
+                    "agent": a,
+                    "opponent": b,
+                    "wins": w,
+                    "losses": l,
+                    "games": n,
+                    "win_rate": round(100 * w / (w + l), 1),
+                    "ci95": ci,
+                    "logged_ci95": [float(lo), float(hi)],
+                    "ci_matches_log": ci == [float(lo), float(hi)],
+                }
+            )
     repeats = defaultdict(list)
     for c in cells:
         repeats[(c["agent"], c["opponent"])].append(c["win_rate"])
@@ -65,7 +83,9 @@ def local_screens():
         "command": "python tools/site_results.py OUT.json ...",
         "cells": cells,
         "repeated_cells": {f"{a} vs {b}": v for (a, b), v in repeats.items() if len(v) > 1},
-        "ci95_half_width_at_50pct_204_games": round((wilson(102, 204)[1] - wilson(102, 204)[0]) / 2, 1),
+        "ci95_half_width_at_50pct_204_games": round(
+            (wilson(102, 204)[1] - wilson(102, 204)[0]) / 2, 1
+        ),
     }
 
 
@@ -76,13 +96,25 @@ def ladder(sub_csv, lb_csv, team):
     for r in rows:
         name = r["fileName"].replace("submission_", "").replace(".tar.gz", "")
         copies[name] += 1
-        every.append({"build": name, "submitted": r["date"][:10],
-                      "rating": float(r["publicScore"]) if r["publicScore"] else None})
+        every.append(
+            {
+                "build": name,
+                "submitted": r["date"][:10],
+                "rating": float(r["publicScore"]) if r["publicScore"] else None,
+            }
+        )
         if copies[name] > 1:
             continue
         score = float(r["publicScore"]) if r["publicScore"] else None
-        builds.append({"build": name, "submitted": r["date"][:10], "rating": score,
-                       "status": r["status"].split(".")[-1].lower(), "submission_id": int(r["ref"])})
+        builds.append(
+            {
+                "build": name,
+                "submitted": r["date"][:10],
+                "rating": score,
+                "status": r["status"].split(".")[-1].lower(),
+                "submission_id": int(r["ref"]),
+            }
+        )
     scored = [float(r["publicScore"]) for r in rows if r["publicScore"]]
     with open(lb_csv, encoding="utf-8-sig") as f:
         lb = list(csv.DictReader(f))
@@ -94,8 +126,12 @@ def ladder(sub_csv, lb_csv, team):
         "builds_first_submission": builds,
         "all_submissions": every,
         "highest_rating_any_submission": max(scored),
-        "leaderboard": {"rank": int(mine["Rank"]), "teams": len(lb),
-                        "score": float(mine["Score"]), "file": os.path.basename(lb_csv)},
+        "leaderboard": {
+            "rank": int(mine["Rank"]),
+            "teams": len(lb),
+            "score": float(mine["Score"]),
+            "file": os.path.basename(lb_csv),
+        },
     }
 
 
@@ -112,7 +148,9 @@ def matchups(ep_dir, submission_ids):
         return " / ".join(sorted(tops)) if tops else "?"
 
     cached = {}
-    for f in glob.glob(os.path.join(REPO, "episodes", "**", "episode-*-replay.json"), recursive=True):
+    for f in glob.glob(
+        os.path.join(REPO, "episodes", "**", "episode-*-replay.json"), recursive=True
+    ):
         cached[int(os.path.basename(f).split("-")[1])] = f
     out = {}
     for sid in submission_ids:
@@ -132,12 +170,14 @@ def matchups(ep_dir, submission_ids):
             agg[a][0] += us.get("reward") == 1
             used += 1
         out[str(sid)] = {
-            "episodes_listed": len(eps), "ladder_wins_all_listed": total_w,
+            "episodes_listed": len(eps),
+            "ladder_wins_all_listed": total_w,
             "episodes_with_cached_replay": used,
-            "by_archetype": {a: {"wins": w, "games": g, "win_rate": round(100 * w / g, 1),
-                                 "ci95": wilson(w, g)}
-                             for a, (w, g) in sorted(agg.items(), key=lambda kv: -kv[1][1])
-                             if g >= 5},
+            "by_archetype": {
+                a: {"wins": w, "games": g, "win_rate": round(100 * w / g, 1), "ci95": wilson(w, g)}
+                for a, (w, g) in sorted(agg.items(), key=lambda kv: -kv[1][1])
+                if g >= 5
+            },
         }
     return out
 
@@ -145,12 +185,17 @@ def matchups(ep_dir, submission_ids):
 def value_head(path):
     """Evaluation metrics saved inside the value-head checkpoint by train/train_az2.py."""
     import torch
+
     ck = torch.load(path, map_location="cpu", weights_only=False)
     n_params = sum(v.numel() for v in ck["state_dict"].values())
     keys = ("value_auc", "sp_value_auc", "policy_top1", "policy_top3", "sp_agree")
-    return {"checkpoint": os.path.relpath(path, REPO), "parameters": n_params,
-            "d_model": ck["d_model"], "n_blocks": int(ck.get("n_blocks", 0)),
-            **{k: round(float(ck[k]), 4) for k in keys if k in ck}}
+    return {
+        "checkpoint": os.path.relpath(path, REPO),
+        "parameters": n_params,
+        "d_model": ck["d_model"],
+        "n_blocks": int(ck.get("n_blocks", 0)),
+        **{k: round(float(ck[k]), 4) for k in keys if k in ck},
+    }
 
 
 def main():
@@ -161,22 +206,26 @@ def main():
     ap.add_argument("--team", required=True, help="Kaggle username on the team row")
     ap.add_argument("--episode-lists", required=True)
     ap.add_argument("--matchup-submissions", default="54842929,55018765")
-    ap.add_argument("--value-checkpoint", default=os.path.join(REPO, "baselines", "v12_pwr",
-                                                                 "az_value_net.pt"))
+    ap.add_argument(
+        "--value-checkpoint", default=os.path.join(REPO, "baselines", "v12_pwr", "az_value_net.pt")
+    )
     args = ap.parse_args()
     res = {
         "local_screens": local_screens(),
         "ladder": ladder(args.submissions, args.leaderboard, args.team),
-        "matchups": matchups(args.episode_lists,
-                             [int(s) for s in args.matchup_submissions.split(",")]),
+        "matchups": matchups(
+            args.episode_lists, [int(s) for s in args.matchup_submissions.split(",")]
+        ),
         "value_head": value_head(args.value_checkpoint),
     }
     with open(args.out, "w") as f:
         json.dump(res, f, indent=2, ensure_ascii=False)
         f.write("\n")
     s = res["local_screens"]
-    print(f"{len(s['cells'])} local cells, {sum(c['ci_matches_log'] for c in s['cells'])} "
-          f"intervals match the log; leaderboard {res['ladder']['leaderboard']}")
+    print(
+        f"{len(s['cells'])} local cells, {sum(c['ci_matches_log'] for c in s['cells'])} "
+        f"intervals match the log; leaderboard {res['ladder']['leaderboard']}"
+    )
 
 
 if __name__ == "__main__":

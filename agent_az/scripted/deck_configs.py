@@ -20,15 +20,44 @@ Determination, 1229 Wally's Compassion.
 """
 
 GRIMM_DECK = (
-    [7] * 10 + [104] * 2 + [112] * 4 + [646] * 4 + [647] * 3 + [648] * 3
-    + [860] * 2 + [1079] * 3 + [1080] + [1086] * 4 + [1097] * 3 + [1152] * 4
-    + [1161] * 2 + [1182] * 2 + [1219] * 4 + [1227] * 4 + [1231] + [1259] * 4
+    [7] * 10
+    + [104] * 2
+    + [112] * 4
+    + [646] * 4
+    + [647] * 3
+    + [648] * 3
+    + [860] * 2
+    + [1079] * 3
+    + [1080]
+    + [1086] * 4
+    + [1097] * 3
+    + [1152] * 4
+    + [1161] * 2
+    + [1182] * 2
+    + [1219] * 4
+    + [1227] * 4
+    + [1231]
+    + [1259] * 4
 )
 
 STARMIE_DECK = (
-    [3] * 9 + [17] * 4 + [666] * 4 + [1030] * 4 + [1031] * 4
-    + [1086] * 4 + [1097] * 2 + [1120] * 4 + [1121] + [1122] * 4 + [1145] * 3
-    + [1159] + [1182] * 2 + [1189] * 4 + [1225] * 2 + [1227] * 4 + [1229] * 4
+    [3] * 9
+    + [17] * 4
+    + [666] * 4
+    + [1030] * 4
+    + [1031] * 4
+    + [1086] * 4
+    + [1097] * 2
+    + [1120] * 4
+    + [1121]
+    + [1122] * 4
+    + [1145] * 3
+    + [1159]
+    + [1182] * 2
+    + [1189] * 4
+    + [1225] * 2
+    + [1227] * 4
+    + [1229] * 4
 )
 
 DECK_CONFIGS = {
@@ -52,13 +81,28 @@ DECK_CONFIGS = {
         "attacker_value": {648: 100, 646: 45, 647: 42, 112: 22, 104: 25, 860: 8},
         # base desirability of drawing/fetching each card into hand
         "fetch_prio": {
-            648: 90, 1079: 85, 646: 80, 647: 55, 112: 60, 7: 40,
-            1086: 70, 1259: 65, 1219: 55, 1182: 45, 1227: 40, 1231: 60,
-            1097: 30, 1152: 35, 1161: 25, 104: 30, 860: 25, 1080: 30,
+            648: 90,
+            1079: 85,
+            646: 80,
+            647: 55,
+            112: 60,
+            7: 40,
+            1086: 70,
+            1259: 65,
+            1219: 55,
+            1182: 45,
+            1227: 40,
+            1231: 60,
+            1097: 30,
+            1152: 35,
+            1161: 25,
+            104: 30,
+            860: 25,
+            1080: 30,
         },
-        "attack_bonus": {937: 60, 934: 5},   # Shadow Bullet bench snipe
+        "attack_bonus": {937: 60, 934: 5},  # Shadow Bullet bench snipe
         "bench_snipe": {937: 30},
-        "ability_tech": {860},               # Froslass line only vs ability decks
+        "ability_tech": {860},  # Froslass line only vs ability decks
         "supporter_base": {1219: 7000, 1231: 7500, 1227: 6000, 1182: -1},
         # per-archetype determinized-search gate (set empirically)
         "search_matchup": {"default": True},
@@ -79,9 +123,23 @@ DECK_CONFIGS = {
         "tool_route": {1159: {1031: 100, 1030: 30, 666: 20}},
         "attacker_value": {1031: 100, 666: 50, 1030: 15},
         "fetch_prio": {
-            1031: 90, 1030: 75, 1145: 70, 1189: 80, 17: 65, 3: 45,
-            1086: 65, 1225: 60, 1227: 40, 1229: 35, 1122: 35, 1121: 40,
-            1120: 30, 1097: 30, 1182: 45, 1159: 45, 666: 20,
+            1031: 90,
+            1030: 75,
+            1145: 70,
+            1189: 80,
+            17: 65,
+            3: 45,
+            1086: 65,
+            1225: 60,
+            1227: 40,
+            1229: 35,
+            1122: 35,
+            1121: 40,
+            1120: 30,
+            1097: 30,
+            1182: 45,
+            1159: 45,
+            666: 20,
         },
         "attack_bonus": {965: 80, 1487: 40, 1488: 20},  # Turbo Flare accel
         "bench_snipe": {1487: 50},
@@ -102,7 +160,7 @@ DECK_CONFIGS = {
         "matchup_overrides": {
             "lucario": {
                 "fetch_prio": {1229: 70, 1159: 75, 1120: 55},
-                                # Wally's Compassion undoes a Mega Brave: keep one banked
+                # Wally's Compassion undoes a Mega Brave: keep one banked
                 "gear_bank": 1229,
                 # search-override margin (win-prob pts/world, x10). The race
                 # vs lucario is decided by config discipline (Cape/Wally/
@@ -127,8 +185,7 @@ DECK_CONFIGS = {
                 "bench_snipe": {1487: 0},
                 # dig for the 3rd Water/Ignition energy + the Mega line; hammer
                 # their metal accel and Boss the Duraludon before it evolves.
-                "fetch_prio": {3: 58, 17: 70, 1031: 92, 1030: 80,
-                               1120: 55, 1182: 52},
+                "fetch_prio": {3: 58, 17: 70, 1031: 92, 1030: 80, 1120: 55, 1182: 52},
                 # conservative race discipline (our Mega is the 3-prize liability)
                 "value_margin": 30,
             },

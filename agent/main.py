@@ -8,11 +8,13 @@ V1 design (see project plan):
 - Never crash, never time out: global try/except + per-move deadline with
   heuristic fallback.
 """
+
+from collections import Counter
 import os
 import random
 import sys
 import time
-from collections import Counter
+
 
 # kaggle_environments exec()s this file, so __file__ may not exist
 AGENT_DIR = "/kaggle_simulations/agent"
@@ -24,7 +26,7 @@ if not os.path.isdir(os.path.join(AGENT_DIR, "cg")):
 if AGENT_DIR not in sys.path:
     sys.path.insert(0, AGENT_DIR)
 
-from cg.api import (
+from cg.api import (  # noqa: E402
     Observation,
     OptionType,
     all_attack,
@@ -34,13 +36,15 @@ from cg.api import (
     to_observation_class,
 )
 
+
 ATTACK_DAMAGE = {}
 ATTACK_COST = {}
-CARD_MIN_COST = {}   # cardId -> min energy count over its attacks
-CARD_MAX_DMG = {}    # cardId -> max printed damage over its attacks
-CARD_TABLE = {}      # cardId -> CardData
+CARD_MIN_COST = {}  # cardId -> min energy count over its attacks
+CARD_MAX_DMG = {}  # cardId -> max printed damage over its attacks
+CARD_TABLE = {}  # cardId -> CardData
 try:
     from cg.api import all_card_data
+
     for _a in all_attack():
         ATTACK_DAMAGE[_a.attackId] = getattr(_a, "damage", 0) or 0
         ATTACK_COST[_a.attackId] = len(getattr(_a, "energies", []) or [])
@@ -80,7 +84,9 @@ def effective_damage(attacker_id, defender_id, damage):
             damage = max(damage - 30, 0)
     return damage
 
+
 # ---------------------------------------------------------------- deck
+
 
 def read_deck_csv():
     path = os.path.join(AGENT_DIR, "deck.csv")
@@ -90,21 +96,23 @@ def read_deck_csv():
         rows = f.read().split("\n")
     return [int(rows[i]) for i in range(60)]
 
+
 DECK = read_deck_csv()
 
-FILLER_BASIC = 1072   # Snorlax: safe opponent-active filler (engine needs a settable card)
-FILLER_CARD = 1       # basic energy filler for opponent hidden zones
+FILLER_BASIC = 1072  # Snorlax: safe opponent-active filler (engine needs a settable card)
+FILLER_CARD = 1  # basic energy filler for opponent hidden zones
 
 # Time management: overage pool observed at ~600s. Stay far below it.
-MOVE_BUDGET = 3.0     # soft seconds per planned move
+MOVE_BUDGET = 3.0  # soft seconds per planned move
 PANIC_RESERVE = 60.0  # if remainingOverageTime dips below this, play instantly
 
-D_WORLDS = 6          # determinizations per decision
-MAX_CANDIDATES = 40   # cap on enumerated first selections
-ROLLOUT_STEPS = 60    # safety cap on greedy rollout length
+D_WORLDS = 6  # determinizations per decision
+MAX_CANDIDATES = 40  # cap on enumerated first selections
+ROLLOUT_STEPS = 60  # safety cap on greedy rollout length
 
 
 # ---------------------------------------------------------------- helpers
+
 
 def visible_own_cards(ps):
     """Multiset of our cards whose identity we can currently see."""
@@ -120,11 +128,11 @@ def visible_own_cards(ps):
             if p is None:
                 continue
             seen.append(p.id)
-            for c in (p.energyCards or []):
+            for c in p.energyCards or []:
                 seen.append(c.id)
-            for c in (p.tools or []):
+            for c in p.tools or []:
                 seen.append(c.id)
-            for c in (p.preEvolution or []):
+            for c in p.preEvolution or []:
                 if c is not None:
                     seen.append(c.id)
     return seen
@@ -145,7 +153,7 @@ def sample_own_hidden(obs, me):
     need = n_deck + n_prize
     if len(pool) < need:
         pool = pool + [FILLER_CARD] * (need - len(pool))
-    return pool[:n_deck], pool[n_deck:n_deck + n_prize]
+    return pool[:n_deck], pool[n_deck : n_deck + n_prize]
 
 
 def begin_world(obs, me):
@@ -168,6 +176,7 @@ def begin_world(obs, me):
 
 # ---------------------------------------------------------------- eval
 
+
 def eval_state(cur, me):
     if cur.result >= 0:
         if cur.result == 2:
@@ -185,12 +194,20 @@ def eval_state(cur, me):
     if my_act is not None and op_act is not None:
         my_ready = len(my_act.energyCards or []) >= CARD_MIN_COST.get(my_act.id, 9)
         op_ready = len(op_act.energyCards or []) >= CARD_MIN_COST.get(op_act.id, 9)
-        my_dmg = effective_damage(my_act.id, op_act.id, CARD_MAX_DMG.get(my_act.id, 0)) if my_ready else 0
-        op_dmg = effective_damage(op_act.id, my_act.id, CARD_MAX_DMG.get(op_act.id, 0)) if op_ready else 0
+        my_dmg = (
+            effective_damage(my_act.id, op_act.id, CARD_MAX_DMG.get(my_act.id, 0))
+            if my_ready
+            else 0
+        )
+        op_dmg = (
+            effective_damage(op_act.id, my_act.id, CARD_MAX_DMG.get(op_act.id, 0))
+            if op_ready
+            else 0
+        )
         if my_dmg >= op_act.hp:
-            v += 9.0 * prize_yield(op_act.id)      # we threaten a KO worth N prizes
+            v += 9.0 * prize_yield(op_act.id)  # we threaten a KO worth N prizes
         if op_dmg >= my_act.hp:
-            v -= 9.0 * prize_yield(my_act.id)      # they threaten our active
+            v -= 9.0 * prize_yield(my_act.id)  # they threaten our active
         # chip pressure even without KO
         v += 2.0 * min(my_dmg / max(op_act.hp, 1), 1.0)
         v -= 2.0 * min(op_dmg / max(my_act.hp, 1), 1.0)
@@ -204,8 +221,7 @@ def eval_state(cur, me):
                 # HP weighted by prize liability: damage on a Mega (3 prizes)
                 # matters ~2x more than on a single-prize Pokemon
                 pw = 1.0 + 0.75 * prize_yield(p.id)
-                v += sign * (2.0 + 1.7 * pw * (p.hp / max(p.maxHp, 1))
-                             + 0.5 * len(p.tools or []))
+                v += sign * (2.0 + 1.7 * pw * (p.hp / max(p.maxHp, 1)) + 0.5 * len(p.tools or []))
                 # energy progress toward this Pokemon's cheapest attack,
                 # weighted by its damage output: charging a real attacker
                 # beats scattering energy on support
@@ -215,9 +231,9 @@ def eval_state(cur, me):
                 dmg_w = min(CARD_MAX_DMG.get(p.id, 30) / 100.0, 3.0)
                 score = 2.5 * progress * (1.0 + dmg_w)
                 if n_en >= cost:
-                    score += 2.0 * (1.0 + dmg_w)   # attack-ready bonus
+                    score += 2.0 * (1.0 + dmg_w)  # attack-ready bonus
                     if zi == 0:
-                        score += 1.5               # ready AND active
+                        score += 1.5  # ready AND active
                 v += sign * score
                 best_ready = max(best_ready, progress)
         # having no attacker anywhere near ready is a crisis
@@ -268,7 +284,7 @@ def enumerate_selections(select):
             for k in range(hi, max(lo, 2) - 1, -1):
                 cands.append(sorted(base[:k]))
             if len(order) > hi:
-                cands.append(sorted(order[1:hi + 1]))
+                cands.append(sorted(order[1 : hi + 1]))
         if lo <= 1:
             cands.extend([[i] for i in order])
     if lo == 0:
@@ -290,6 +306,7 @@ def heuristic_choice(select):
 
 
 # ---------------------------------------------------------------- search
+
 
 def greedy_rollout(state, me):
     """Play out our turn AND the opponent's greedy reply, then evaluate.
@@ -336,6 +353,7 @@ def plan(obs, me, deadline):
             _stats["worlds_fail"] += 1
             if DEBUG:
                 import traceback
+
                 print(f"[agent] begin_world fail: {e!r}", file=sys.stderr)
                 traceback.print_exc()
             break
@@ -367,6 +385,7 @@ def plan(obs, me, deadline):
 
 
 # ---------------------------------------------------------------- entry point
+
 
 def agent(obs_dict: dict) -> list[int]:
     try:

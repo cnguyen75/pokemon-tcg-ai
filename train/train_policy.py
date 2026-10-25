@@ -10,22 +10,30 @@ per-decision-type breakdown, and forward-pass inference cost.
 
 uv run --python 3.13 --with numpy --with torch python train/train_policy.py
 """
+
 import os
-import sys
 import time
 
 import numpy as np
 
+
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OPT_TYPE_NAMES = {7: "PLAY", 8: "ATTACH", 9: "EVOLVE", 10: "ABILITY",
-                  11: "DISCARD", 12: "RETREAT", 13: "ATTACK", 14: "END",
-                  15: "SKILL"}
+OPT_TYPE_NAMES = {
+    7: "PLAY",
+    8: "ATTACH",
+    9: "EVOLVE",
+    10: "ABILITY",
+    11: "DISCARD",
+    12: "RETREAT",
+    13: "ATTACK",
+    14: "END",
+    15: "SKILL",
+}
 
 
 def load():
     d = np.load(os.path.join(REPO, "train", "data", "policy.npz"))
-    return (d["X_opt"], d["X_state"], d["offs"], d["chosen"],
-            d["script"], d["ep"], d["dtype_"])
+    return (d["X_opt"], d["X_state"], d["offs"], d["chosen"], d["script"], d["ep"], d["dtype_"])
 
 
 def main():
@@ -37,8 +45,11 @@ def main():
     D_opt = X_opt.shape[1]
     D_state = X_state.shape[1]
     D = D_opt + D_state
-    print(f"decisions {n_dec}, options {len(X_opt)}, D_opt {D_opt}, "
-          f"D_state {D_state}, unique episodes {len(np.unique(ep))}", flush=True)
+    print(
+        f"decisions {n_dec}, options {len(X_opt)}, D_opt {D_opt}, "
+        f"D_state {D_state}, unique episodes {len(np.unique(ep))}",
+        flush=True,
+    )
 
     # per-option full input = [opt | state broadcast]
     n_opt_total = len(X_opt)
@@ -59,8 +70,11 @@ def main():
     is_test_dec = np.array([e in test_eps for e in ep])
     tr_dec = np.where(~is_test_dec)[0]
     te_dec = np.where(is_test_dec)[0]
-    print(f"train decisions {len(tr_dec)}, test decisions {len(te_dec)}, "
-          f"test episodes {len(test_eps)}/{len(uep)}", flush=True)
+    print(
+        f"train decisions {len(tr_dec)}, test decisions {len(te_dec)}, "
+        f"test episodes {len(test_eps)}/{len(uep)}",
+        flush=True,
+    )
 
     # standardize on TRAIN options
     tr_opt_mask = np.isin(dec_of_opt, tr_dec)
@@ -99,9 +113,13 @@ def main():
         def __init__(self, d, h=64):
             super().__init__()
             self.net = nn.Sequential(
-                nn.Linear(d, h), nn.ReLU(), nn.Dropout(0.1),
-                nn.Linear(h, h), nn.ReLU(),
-                nn.Linear(h, 1))
+                nn.Linear(d, h),
+                nn.ReLU(),
+                nn.Dropout(0.1),
+                nn.Linear(h, h),
+                nn.ReLU(),
+                nn.Linear(h, 1),
+            )
 
         def forward(self, x):  # x: (..., D) -> (...)
             return self.net(x).squeeze(-1)
@@ -111,8 +129,8 @@ def main():
     NEG = -1e9
 
     def scores_masked(X, Mk):
-        s = net(X)                      # (N, M)
-        return s + (Mk - 1.0) * 1e9     # mask pads to -inf
+        s = net(X)  # (N, M)
+        return s + (Mk - 1.0) * 1e9  # mask pads to -inf
 
     def eval_split(X, Mk, C):
         net.eval()
@@ -134,7 +152,7 @@ def main():
         rng.shuffle(idx)
         tot = 0.0
         for k in range(0, N, BATCH):
-            bi = idx[k:k + BATCH]
+            bi = idx[k : k + BATCH]
             xb = Xtr_t[bi]
             mb = Mtr_t[bi]
             cb = Ctr_t[bi]
@@ -147,12 +165,13 @@ def main():
             tot += loss.item() * len(bi)
         if (epoch + 1) % 5 == 0 or epoch == 0:
             te1, te3 = eval_split(Xte_t, Mte_t, Cte)
-            print(f"epoch {epoch+1:2d} loss {tot/N:.4f} test t1 {te1:.4f} "
-                  f"t3 {te3:.4f}", flush=True)
+            print(
+                f"epoch {epoch + 1:2d} loss {tot / N:.4f} test t1 {te1:.4f} t3 {te3:.4f}",
+                flush=True,
+            )
             if te1 > best_t1:
                 best_t1 = te1
-                best_state = {k2: v.cpu().clone()
-                              for k2, v in net.state_dict().items()}
+                best_state = {k2: v.cpu().clone() for k2, v in net.state_dict().items()}
 
     if best_state is not None:
         net.load_state_dict(best_state)
@@ -161,10 +180,10 @@ def main():
     net_t1, net_t3 = eval_split(Xte_t, Mte_t, Cte)
     net.eval()
     with torch.no_grad():
-        norder = torch.argsort(scores_masked(Xte_t, Mte_t), dim=1,
-                               descending=True).cpu().numpy()
+        norder = torch.argsort(scores_masked(Xte_t, Mte_t), dim=1, descending=True).cpu().numpy()
 
     from collections import defaultdict
+
     per = defaultdict(lambda: [0, 0, 0, 0.0])  # n, net_t1, sc_t1, rnd
     sc_t1 = sc_t3 = 0
     rnd = 0.0
@@ -193,18 +212,19 @@ def main():
     print("=" * 64)
     print(f"held-out decisions: {n}, mean options/decision: {sizes[te_dec].mean():.2f}")
     print(f"  NET     top-1 {net_t1:.4f}   top-3 {net_t3:.4f}")
-    print(f"  SCRIPT  top-1 {sc_t1/n:.4f}   top-3 {sc_t3/n:.4f}")
-    print(f"  RANDOM  top-1 {rnd/n:.4f}")
-    print(f"  >>> NET - SCRIPT top-1 gap: {100*(net_t1 - sc_t1/n):+.1f} pp")
+    print(f"  SCRIPT  top-1 {sc_t1 / n:.4f}   top-3 {sc_t3 / n:.4f}")
+    print(f"  RANDOM  top-1 {rnd / n:.4f}")
+    print(f"  >>> NET - SCRIPT top-1 gap: {100 * (net_t1 - sc_t1 / n):+.1f} pp")
 
     print("\n--- by decision type (chosen option's type) ---")
-    print(f"  {'type':10s} {'n':>6s} {'net_t1':>8s} {'scr_t1':>8s} "
-          f"{'gap_pp':>7s} {'rnd':>6s}")
+    print(f"  {'type':10s} {'n':>6s} {'net_t1':>8s} {'scr_t1':>8s} {'gap_pp':>7s} {'rnd':>6s}")
     for dt in sorted(per, key=lambda k: -per[k][0]):
         nn_, nt1, st1, rr = per[dt]
         name = OPT_TYPE_NAMES.get(dt, str(dt))
-        print(f"  {name:10s} {nn_:6d} {nt1/nn_:8.3f} {st1/nn_:8.3f} "
-              f"{100*(nt1-st1)/nn_:+7.1f} {rr/nn_:6.3f}")
+        print(
+            f"  {name:10s} {nn_:6d} {nt1 / nn_:8.3f} {st1 / nn_:8.3f} "
+            f"{100 * (nt1 - st1) / nn_:+7.1f} {rr / nn_:6.3f}"
+        )
 
     # ---- inference cost ----
     med = int(np.median(sizes[te_dec]))
@@ -218,8 +238,10 @@ def main():
         for _ in range(REP):
             net(xb)
     dt_ms = (time.time() - t0) / REP * 1000
-    print(f"\ninference: {dt_ms:.4f} ms / decision ({med} options, {dev}); "
-          f"params {sum(p.numel() for p in net.parameters())}")
+    print(
+        f"\ninference: {dt_ms:.4f} ms / decision ({med} options, {dev}); "
+        f"params {sum(p.numel() for p in net.parameters())}"
+    )
 
 
 if __name__ == "__main__":

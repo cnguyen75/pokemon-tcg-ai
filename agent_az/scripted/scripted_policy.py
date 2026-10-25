@@ -13,12 +13,14 @@ Design:
   verify with a short determinized search before burning the supporter.
 - Robustness: full try/except, per-move deadline, panic mode on low overage.
 """
+
+from collections import Counter
 import math
 import os
 import random
 import sys
 import time
-from collections import Counter
+
 
 # kaggle_environments exec()s this file, so __file__ may not exist
 AGENT_DIR = "/kaggle_simulations/agent"
@@ -30,7 +32,7 @@ if not os.path.isdir(os.path.join(AGENT_DIR, "cg")):
 if AGENT_DIR not in sys.path:
     sys.path.insert(0, AGENT_DIR)
 
-from cg.api import (
+from cg.api import (  # noqa: E402
     AreaType,
     CardType,
     Observation,
@@ -40,9 +42,11 @@ from cg.api import (
     to_observation_class,
 )
 
+
 SEARCH_OK = False
 try:
     from cg.api import all_attack, all_card_data, search_begin, search_end, search_step
+
     SEARCH_OK = True
 except Exception:
     from cg.api import all_attack, all_card_data
@@ -57,12 +61,14 @@ except Exception:
 
 # ------------------------------------------------------------ deck config
 
+
 def _load_configs():
     ns = {}
     path = os.path.join(AGENT_DIR, "deck_configs.py")
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         exec(compile(f.read(), path, "exec"), ns)
     return ns["DECK_CONFIGS"]
+
 
 DECK_CONFIGS = _load_configs()
 DECK_NAME = os.environ.get("CG_DECK_NAME", "starmie")
@@ -73,10 +79,10 @@ DECK = list(CFG["deck"])
 DECK_TOTAL = Counter(DECK)
 
 BOSS = 1182
-FILLER_BASIC = 1072   # Snorlax: safe opponent-active filler for search worlds
+FILLER_BASIC = 1072  # Snorlax: safe opponent-active filler for search worlds
 FILLER_CARD = 1
-PIERCE_ATTACKS = {1488}          # Nebula Beam: ignores W/R and defender effects
-EX_WALL = {345}                  # Crustle: no damage from Pokemon ex / Mega ex
+PIERCE_ATTACKS = {1488}  # Nebula Beam: ignores W/R and defender effects
+EX_WALL = {345}  # Crustle: no damage from Pokemon ex / Mega ex
 # basics that evolve into a big attacker: KOing them early starves the opponent
 GUST_WORTH = {677, 741, 1030, 169, 722, 268, 646, 860, 878, 344, 673}
 PANIC_RESERVE = 60.0
@@ -87,18 +93,38 @@ IS_FIRST_YES = int(os.environ.get("CG_A2_FIRST_YES", "100"))
 ENERGY_TYPES = (CardType.BASIC_ENERGY, CardType.SPECIAL_ENERGY)
 
 # archetype signatures: flagship first, then early-game cards
-_ARCH_FLAG = [(678, "lucario"), (648, "grimmsnarl"), (743, "alakazam"),
-              (1031, "starmie"), (190, "archaludon"), (345, "crustle_wall"),
-              (879, "trevenant"), (861, "froslass"), (756, "kangaskhan"),
-              (723, "abomasnow"), (269, "bellibolt")]
-_ARCH_EARLY = [(677, "lucario"), (646, "grimmsnarl"), (741, "alakazam"),
-               (1030, "starmie"), (169, "archaludon"), (344, "crustle_wall"),
-               (878, "trevenant"), (722, "abomasnow"), (268, "bellibolt"),
-               (270, "bellibolt"), (271, "bellibolt"),
-               # lucario-shell support basics (Makuhita/Lunatone/Solrock):
-               # the public 1084 list opens with these long before Riolu shows
-               (673, "lucario"), (674, "lucario"), (675, "lucario"),
-               (676, "lucario")]
+_ARCH_FLAG = [
+    (678, "lucario"),
+    (648, "grimmsnarl"),
+    (743, "alakazam"),
+    (1031, "starmie"),
+    (190, "archaludon"),
+    (345, "crustle_wall"),
+    (879, "trevenant"),
+    (861, "froslass"),
+    (756, "kangaskhan"),
+    (723, "abomasnow"),
+    (269, "bellibolt"),
+]
+_ARCH_EARLY = [
+    (677, "lucario"),
+    (646, "grimmsnarl"),
+    (741, "alakazam"),
+    (1030, "starmie"),
+    (169, "archaludon"),
+    (344, "crustle_wall"),
+    (878, "trevenant"),
+    (722, "abomasnow"),
+    (268, "bellibolt"),
+    (270, "bellibolt"),
+    (271, "bellibolt"),
+    # lucario-shell support basics (Makuhita/Lunatone/Solrock):
+    # the public 1084 list opens with these long before Riolu shows
+    (673, "lucario"),
+    (674, "lucario"),
+    (675, "lucario"),
+    (676, "lucario"),
+]
 
 
 def prize_yield(cid):
@@ -160,9 +186,21 @@ def eff_damage(att_id, def_id, attack):
 
 
 class Plan:
-    __slots__ = ("attacker_bi", "target_bi", "attack_id", "dmg", "ko", "wins",
-                 "needs_energy", "needs_gust", "needs_switch", "score",
-                 "attacker_serial", "target_serial", "retreat_fuel")
+    __slots__ = (
+        "attacker_bi",
+        "target_bi",
+        "attack_id",
+        "dmg",
+        "ko",
+        "wins",
+        "needs_energy",
+        "needs_gust",
+        "needs_switch",
+        "score",
+        "attacker_serial",
+        "target_serial",
+        "retreat_fuel",
+    )
 
     def __init__(self):
         self.attacker_bi = -1
@@ -171,22 +209,29 @@ class Plan:
         self.dmg = 0
         self.ko = False
         self.wins = False
-        self.needs_energy = 0      # card id of energy to attach first, or 0
+        self.needs_energy = 0  # card id of energy to attach first, or 0
         self.needs_gust = False
         self.needs_switch = False
         self.score = -1.0
         self.attacker_serial = -1
         self.target_serial = -1
-        self.retreat_fuel = 0      # energy card id to attach to ACTIVE so it can retreat
+        self.retreat_fuel = 0  # energy card id to attach to ACTIVE so it can retreat
 
 
 # persistent per-game state
-_G = {"turn": -99, "plan": Plan(), "lethal_fail": set(), "arch": "unknown",
-      "search_t": 0.0, "overage": None, "move_t0": 0.0}
+_G = {
+    "turn": -99,
+    "plan": Plan(),
+    "lethal_fail": set(),
+    "arch": "unknown",
+    "search_t": 0.0,
+    "overage": None,
+    "move_t0": 0.0,
+}
 IN_VERIFY = False
 
 # ---------------------------------------------------------- search budget
-MOVE_DEADLINE = 2.4     # hard per-move ceiling (s)
+MOVE_DEADLINE = 2.4  # hard per-move ceiling (s)
 SEARCH_BUDGET = float(os.environ.get("CG_A2_SEARCH_BUDGET", "1.9"))  # per-search (s)
 SEARCH_MAX_WORLDS = int(os.environ.get("CG_A2_SEARCH_WORLDS", "10"))
 SEARCH_MAX_CANDS = int(os.environ.get("CG_A2_SEARCH_CANDS", "5"))
@@ -198,11 +243,11 @@ SEARCH_MAX_CANDS = int(os.environ.get("CG_A2_SEARCH_CANDS", "5"))
 # scored. This is the AlphaZero-lite depth: good eval can now beat the policy's
 # tactical mistakes because we actually search our sequence, not just move 1.
 BEAM_ON = os.environ.get("CG_A2_BEAM", "1") not in ("", "0")
-BEAM_WIDTH = int(os.environ.get("CG_A2_BEAM_WIDTH", "4"))   # live states kept/level
+BEAM_WIDTH = int(os.environ.get("CG_A2_BEAM_WIDTH", "4"))  # live states kept/level
 BEAM_EXPAND_B = int(os.environ.get("CG_A2_EXPAND_B", "3"))  # policy top-B per node
 BEAM_DEPTH = int(os.environ.get("CG_A2_BEAM_DEPTH", "26"))  # max our-turn selects
-BEAM_TERMK = int(os.environ.get("CG_A2_BEAM_TERMK", "3"))   # end-states opp-rolled
-SEARCH_GAME_CAP = 110.0 # cumulative search seconds per game
+BEAM_TERMK = int(os.environ.get("CG_A2_BEAM_TERMK", "3"))  # end-states opp-rolled
+SEARCH_GAME_CAP = 110.0  # cumulative search seconds per game
 SEARCH_OVERAGE_MIN = 90.0  # skip search below this remaining overage
 # only override the policy when the challenger beats it by this mean margin
 SEARCH_MARGIN = float(os.environ.get("CG_A2_SEARCH_MARGIN", "150"))
@@ -211,8 +256,7 @@ SEARCH_HORIZON = int(os.environ.get("CG_A2_SEARCH_HORIZON", "2"))
 ROLLOUT_STEPS = 140
 DEBUG = bool(os.environ.get("CG_A2_DEBUG"))
 # decision classes disabled for search (comma list, e.g. "atk,promote")
-SEARCH_OFF = frozenset(
-    x for x in os.environ.get("CG_A2_SEARCH_OFF", "").split(",") if x)
+SEARCH_OFF = frozenset(x for x in os.environ.get("CG_A2_SEARCH_OFF", "").split(",") if x)
 
 # ---------------------------------------------- learned leaf value net
 # CG_A2_VALUE_NET=1 replaces the handcrafted leaf eval in det_search with a
@@ -227,22 +271,40 @@ if VALUE_NET_ON:
     try:
         import value_features as _vf
         import value_net as _vn
+
         VN_OK = _vn.load(AGENT_DIR)
     except Exception:
         VN_OK = False
     if not VN_OK:
         # loud (once) so local runs don't silently measure the wrong agent:
         # league runs need `uv run --python 3.13 --with numpy ...`
-        print("[a2] WARNING value net requested but unavailable "
-              "(numpy/value_net.npz); falling back to handcrafted eval",
-              file=sys.stderr, flush=True)
+        print(
+            "[a2] WARNING value net requested but unavailable "
+            "(numpy/value_net.npz); falling back to handcrafted eval",
+            file=sys.stderr,
+            flush=True,
+        )
+
 
 # search instrumentation (per game; printed on reset when CG_A2_DEBUG)
 def _fresh_stats():
-    return {"searches": 0, "t": 0.0, "worlds": 0, "cands": 0, "coins": 0,
-            "overrides": 0, "fallbacks": 0, "moves": 0, "max_move": 0.0,
-            "nodes": 0, "depth_sum": 0, "lines": 0, "opp_rollouts": 0,
-            "by_class": Counter()}
+    return {
+        "searches": 0,
+        "t": 0.0,
+        "worlds": 0,
+        "cands": 0,
+        "coins": 0,
+        "overrides": 0,
+        "fallbacks": 0,
+        "moves": 0,
+        "max_move": 0.0,
+        "nodes": 0,
+        "depth_sum": 0,
+        "lines": 0,
+        "opp_rollouts": 0,
+        "by_class": Counter(),
+    }
+
 
 _S = _fresh_stats()
 
@@ -329,10 +391,10 @@ class Policy:
             if p is None:
                 continue
             seen.add(p.id)
-            for c in (p.preEvolution or []):
+            for c in p.preEvolution or []:
                 if c is not None:
                     seen.add(c.id)
-        for c in (self.op.discard or []):
+        for c in self.op.discard or []:
             if c is not None:
                 seen.add(c.id)
         for cid, name in _ARCH_FLAG:
@@ -345,27 +407,27 @@ class Policy:
 
     def _visible_own(self):
         seen = Counter()
-        for c in (self.my.hand or []):
+        for c in self.my.hand or []:
             if c is not None:
                 seen[c.id] += 1
-        for c in (self.my.discard or []):
+        for c in self.my.discard or []:
             if c is not None:
                 seen[c.id] += 1
-        for c in (self.my.prize or []):
+        for c in self.my.prize or []:
             if c is not None:
                 seen[c.id] += 1
         for p in self.my_board:
             if p is None:
                 continue
             seen[p.id] += 1
-            for c in (p.energyCards or []):
+            for c in p.energyCards or []:
                 seen[c.id] += 1
-            for c in (p.tools or []):
+            for c in p.tools or []:
                 seen[c.id] += 1
-            for c in (p.preEvolution or []):
+            for c in p.preEvolution or []:
                 if c is not None:
                     seen[c.id] += 1
-        for c in (self.state.stadium or []):
+        for c in self.state.stadium or []:
             if c is not None and c.playerIndex == self.me:
                 seen[c.id] += 1
         return seen
@@ -406,8 +468,12 @@ class Policy:
         # can we unlock a retreat by attaching one energy to the active?
         retreat_fuel = 0
         active = self.my_board[0] if self.my_board else None
-        if (not self.can_retreat and active is not None
-                and not self.state.energyAttached and not self.state.retreated):
+        if (
+            not self.can_retreat
+            and active is not None
+            and not self.state.energyAttached
+            and not self.state.retreated
+        ):
             ad = CARD.get(active.id)
             if ad is not None and ad.retreatCost - len(active.energies or []) == 1:
                 for cid, cnt in self.hand_counts.items():
@@ -424,7 +490,7 @@ class Policy:
             pd = CARD.get(p.id)
             if pd is None:
                 continue
-            for aid in (pd.attacks or []):
+            for aid in pd.attacks or []:
                 a = ATK.get(aid)
                 if a is None:
                     continue
@@ -472,9 +538,9 @@ class Policy:
                     ko = dmg >= q.hp and dmg > 0
                     py = prize_yield(q.id)
                     wins = ko and self.op_prizes <= py
-                    if ti > 0 and not (ko and (wins or py >= 2
-                                               or len(q.energies or []) >= 3
-                                               or q.id in GUST_WORTH)):
+                    if ti > 0 and not (
+                        ko and (wins or py >= 2 or len(q.energies or []) >= 3 or q.id in GUST_WORTH)
+                    ):
                         continue  # Boss is precious: gust only for KOs that matter
                     if wins:
                         score = 10_000_000.0
@@ -521,8 +587,7 @@ class Policy:
         d = CARD.get(cid)
         if d is None:
             return 5
-        base = self.cfg["fetch_prio"].get(
-            cid, 25 if d.cardType == CardType.POKEMON else 15)
+        base = self.cfg["fetch_prio"].get(cid, 25 if d.cardType == CardType.POKEMON else 15)
         s = float(base)
         s -= 30.0 * self.hand_counts.get(cid, 0)
         if d.cardType == CardType.POKEMON:
@@ -539,8 +604,9 @@ class Policy:
                         if self.field_counts.get(base_id, 0):
                             s += 70
                     else:
-                        can_jump = (self.hand_counts.get(1079, 0) > 0
-                                    and self.field_counts.get(base_id, 0))
+                        can_jump = self.hand_counts.get(1079, 0) > 0 and self.field_counts.get(
+                            base_id, 0
+                        )
                         if self.field_counts.get(mid_id, 0) or can_jump:
                             s += 70
                         elif not self.field_counts.get(base_id, 0):
@@ -549,22 +615,27 @@ class Policy:
                     # a middle stage: bottleneck when base in play + top in hand
                     for top, pr in self.cfg["evo_top"].items():
                         if len(pr) > 1 and pr[1] == cid:
-                            if (self.field_counts.get(pr[0], 0)
-                                    and self.hand_counts.get(top, 0)
-                                    and not self.hand_counts.get(1079, 0)):
+                            if (
+                                self.field_counts.get(pr[0], 0)
+                                and self.hand_counts.get(top, 0)
+                                and not self.hand_counts.get(1079, 0)
+                            ):
                                 s += 65
         elif d.cardType in ENERGY_TYPES:
             plan = _G["plan"]
             if plan.needs_energy == cid:
                 s += 50
-            n_energy_hand = sum(c for i, c in self.hand_counts.items()
-                                if CARD.get(i) is not None
-                                and CARD[i].cardType in ENERGY_TYPES)
+            n_energy_hand = sum(
+                c
+                for i, c in self.hand_counts.items()
+                if CARD.get(i) is not None and CARD[i].cardType in ENERGY_TYPES
+            )
             s -= 12 * n_energy_hand
         elif d.cardType == CardType.SUPPORTER:
-            has_sup = any(CARD.get(i) is not None
-                          and CARD[i].cardType == CardType.SUPPORTER
-                          for i in self.hand_counts)
+            has_sup = any(
+                CARD.get(i) is not None and CARD[i].cardType == CardType.SUPPORTER
+                for i in self.hand_counts
+            )
             if not has_sup:
                 s += 20
         if cid == 1079:  # Rare Candy: gold when a stage-2 jump is brewing
@@ -585,12 +656,15 @@ class Policy:
     # ------------------------------------------------------- MAIN scoring
 
     def sc_ability(self, o):
-        card = get_card(self.obs, o.area, o.index, o.playerIndex
-                        if o.playerIndex is not None else self.me)
+        card = get_card(
+            self.obs, o.area, o.index, o.playerIndex if o.playerIndex is not None else self.me
+        )
         cid = getattr(card, "id", 0)
         if cid == 1259:  # Spikemuth Gym: fetch a Marnie's pokemon
-            best = max((self.need_score(i) for i in (646, 647, 648)
-                        if self.copies_hidden(i) > 0), default=-1)
+            best = max(
+                (self.need_score(i) for i in (646, 647, 648) if self.copies_hidden(i) > 0),
+                default=-1,
+            )
             return 21000 if best > 0 else -1
         if cid == 112:  # Munkidori Adrena-Brain
             return 20000 if self.my_damage_total() > 0 else -1
@@ -621,32 +695,43 @@ class Policy:
         if cid == 1086:  # Poffin
             if len(self.my.bench or []) >= self.my.benchMax:
                 return -1
-            want = any(CARD.get(i) is not None and CARD[i].cardType == CardType.POKEMON
-                       and CARD[i].basic and CARD[i].hp <= 70
-                       and self.line_cap_ok(i) and self.copies_hidden(i) > 0
-                       for i in DECK_TOTAL)
+            want = any(
+                CARD.get(i) is not None
+                and CARD[i].cardType == CardType.POKEMON
+                and CARD[i].basic
+                and CARD[i].hp <= 70
+                and self.line_cap_ok(i)
+                and self.copies_hidden(i) > 0
+                for i in DECK_TOTAL
+            )
             return 12000 if want else -1
         if cid == 1079:  # Rare Candy (engine only offers when legal)
             return 11000
         if cid == 1080:  # Unfair Stamp
             return 8000
         if cid == 1121:  # Ultra Ball
-            best = max((self.need_score(i) for i in DECK_TOTAL
-                        if CARD.get(i) is not None
-                        and CARD[i].cardType == CardType.POKEMON
-                        and self.copies_hidden(i) > 0), default=-1)
+            best = max(
+                (
+                    self.need_score(i)
+                    for i in DECK_TOTAL
+                    if CARD.get(i) is not None
+                    and CARD[i].cardType == CardType.POKEMON
+                    and self.copies_hidden(i) > 0
+                ),
+                default=-1,
+            )
             return 9000 if best > 40 else 400
         if cid == 1122:  # Pokegear
-            has_sup = any(CARD.get(i) is not None
-                          and CARD[i].cardType == CardType.SUPPORTER
-                          for i in self.hand_counts)
+            has_sup = any(
+                CARD.get(i) is not None and CARD[i].cardType == CardType.SUPPORTER
+                for i in self.hand_counts
+            )
             if not has_sup:
                 return 8200
             # matchup knob: bank the matchup supporter (e.g. Wally vs
             # lucario) even when we already hold some other supporter
             bank = self.cfg.get("gear_bank", 0)
-            if bank and not self.hand_counts.get(bank, 0) \
-                    and self.copies_hidden(bank) > 0:
+            if bank and not self.hand_counts.get(bank, 0) and self.copies_hidden(bank) > 0:
                 return 7800
             return 300
         if cid == 1120:  # Crushing Hammer
@@ -654,25 +739,44 @@ class Policy:
                 return 4000
             return -1
         if cid == 1097:  # Night Stretcher
-            best = max((self.need_score(c.id) for c in (self.my.discard or [])
-                        if c is not None and CARD.get(c.id) is not None
-                        and (CARD[c.id].cardType == CardType.POKEMON
-                             or CARD[c.id].cardType == CardType.BASIC_ENERGY)),
-                       default=-1)
+            best = max(
+                (
+                    self.need_score(c.id)
+                    for c in (self.my.discard or [])
+                    if c is not None
+                    and CARD.get(c.id) is not None
+                    and (
+                        CARD[c.id].cardType == CardType.POKEMON
+                        or CARD[c.id].cardType == CardType.BASIC_ENERGY
+                    )
+                ),
+                default=-1,
+            )
             return 500 + best * 20 if best > 30 else -1
         if cid == 1145:  # Mega Signal
             for top in self.cfg["evo_top"]:
                 td = CARD.get(top)
-                if td is not None and td.megaEx and self.hand_counts.get(top, 0) == 0 \
-                        and self.copies_hidden(top) > 0:
+                if (
+                    td is not None
+                    and td.megaEx
+                    and self.hand_counts.get(top, 0) == 0
+                    and self.copies_hidden(top) > 0
+                ):
                     return 10000
             return -1
         if cid == 1152:  # Poke Pad
-            best = max((self.need_score(i) for i in DECK_TOTAL
-                        if CARD.get(i) is not None
-                        and CARD[i].cardType == CardType.POKEMON
-                        and not CARD[i].ex and not CARD[i].megaEx
-                        and self.copies_hidden(i) > 0), default=-1)
+            best = max(
+                (
+                    self.need_score(i)
+                    for i in DECK_TOTAL
+                    if CARD.get(i) is not None
+                    and CARD[i].cardType == CardType.POKEMON
+                    and not CARD[i].ex
+                    and not CARD[i].megaEx
+                    and self.copies_hidden(i) > 0
+                ),
+                default=-1,
+            )
             return 9200 if best > 35 else -1
         return 9800  # unknown item: probably fine to play
 
@@ -704,8 +808,11 @@ class Policy:
                 return 12500
             return 9000 if best >= 240 else -1
         if cid == 1231:  # Dawn: fetch basic + stage1 + stage2
-            missing = sum(1 for i in (646, 647, 648)
-                          if self.hand_counts.get(i, 0) == 0 and self.copies_hidden(i) > 0)
+            missing = sum(
+                1
+                for i in (646, 647, 648)
+                if self.hand_counts.get(i, 0) == 0 and self.copies_hidden(i) > 0
+            )
             return 8500 if missing >= 2 else 7200
         if cid == 1225:  # Hilda: evolution pokemon + energy
             for top in self.cfg["evo_top"]:
@@ -713,11 +820,17 @@ class Policy:
                     return 8300
             return 5800
         if cid == 1219:  # Petrel: fetch any trainer
-            best = max((self.need_score(i) for i in DECK_TOTAL
-                        if CARD.get(i) is not None
-                        and CARD[i].cardType in (CardType.ITEM, CardType.TOOL,
-                                                 CardType.SUPPORTER, CardType.STADIUM)
-                        and self.copies_hidden(i) > 0), default=0)
+            best = max(
+                (
+                    self.need_score(i)
+                    for i in DECK_TOTAL
+                    if CARD.get(i) is not None
+                    and CARD[i].cardType
+                    in (CardType.ITEM, CardType.TOOL, CardType.SUPPORTER, CardType.STADIUM)
+                    and self.copies_hidden(i) > 0
+                ),
+                default=0,
+            )
             return 7000 + best * 6
         if cid in (1227, 1223):  # hand refresh
             if self.my.deckCount < 10:
@@ -760,16 +873,17 @@ class Policy:
             v = route.get(target.id, -1)
             if v < 0:
                 # only slap a tool on an off-plan target if nothing better exists
-                better = any(p is not None and p.id in route and not (p.tools or [])
-                             for p in self.my_board)
+                better = any(
+                    p is not None and p.id in route and not (p.tools or []) for p in self.my_board
+                )
                 return -1 if better else 900
             # hold the tool if a strictly better holder is available or coming
             for i in (i for i, x in route.items() if x > v):
-                if any(p is not None and p.id == i and not (p.tools or [])
-                       for p in self.my_board):
+                if any(p is not None and p.id == i and not (p.tools or []) for p in self.my_board):
                     return -1  # better holder in play with a free slot: use it
                 if not self.field_counts.get(i, 0) and (
-                        self.hand_counts.get(i, 0) or self.copies_hidden(i)):
+                    self.hand_counts.get(i, 0) or self.copies_hidden(i)
+                ):
                     return -1  # better holder still coming: hold
             return 7000 + v
         # energy
@@ -797,8 +911,7 @@ class Policy:
         cid = getattr(card, "id", 0)
         if cid == 104 and self.opp_ability_count() == 0:
             return 550  # Froslass shroud would only chip our own board
-        if (cid in self.cfg.get("jit_evolve", ())
-                and o.inPlayArea == AreaType.BENCH):
+        if cid in self.cfg.get("jit_evolve", ()) and o.inPlayArea == AreaType.BENCH:
             # a benched Mega is a 3-prize gust target with no upside until
             # it attacks: keep the 1-prize basic and evolve when promoted
             return 540
@@ -826,7 +939,11 @@ class Policy:
             return 10
         q = self.op_board[0] if self.op_board else None
         me_active = self.my_board[0] if self.my_board else None
-        dmg = eff_damage(me_active.id, q.id, a) if (q is not None and me_active is not None) else (a.damage or 0)
+        dmg = (
+            eff_damage(me_active.id, q.id, a)
+            if (q is not None and me_active is not None)
+            else (a.damage or 0)
+        )
         bonus = self.cfg.get("attack_bonus", {}).get(o.attackId, 0)
         if dmg <= 0 and bonus <= 0:
             return 5
@@ -835,8 +952,9 @@ class Policy:
     # ------------------------------------------------------- card contexts
 
     def sc_card(self, o):
-        card = get_card(self.obs, o.area, o.index,
-                        o.playerIndex if o.playerIndex is not None else self.me)
+        card = get_card(
+            self.obs, o.area, o.index, o.playerIndex if o.playerIndex is not None else self.me
+        )
         ctx = self.ctx
         plan = _G["plan"]
         if ctx == SelectContext.SETUP_ACTIVE_POKEMON:
@@ -854,13 +972,20 @@ class Policy:
             return 100 + self.cfg["bench_value"].get(cid, 5)
         if ctx == SelectContext.TO_HAND:
             return self.need_score(getattr(card, "id", 0))
-        if ctx in (SelectContext.DISCARD, SelectContext.TO_DECK,
-                   SelectContext.TO_DECK_BOTTOM, SelectContext.TO_PRIZE):
+        if ctx in (
+            SelectContext.DISCARD,
+            SelectContext.TO_DECK,
+            SelectContext.TO_DECK_BOTTOM,
+            SelectContext.TO_PRIZE,
+        ):
             return 200 - self.need_score(getattr(card, "id", 0))
         if ctx == SelectContext.NOT_MOVE:
             return self.need_score(getattr(card, "id", 0))
-        if ctx in (SelectContext.DAMAGE_COUNTER, SelectContext.DAMAGE_COUNTER_ANY,
-                   SelectContext.DAMAGE):
+        if ctx in (
+            SelectContext.DAMAGE_COUNTER,
+            SelectContext.DAMAGE_COUNTER_ANY,
+            SelectContext.DAMAGE,
+        ):
             return self.sc_damage_target(o, card)
         if ctx in (SelectContext.REMOVE_DAMAGE_COUNTER, SelectContext.HEAL):
             if isinstance(card, Pokemon):
@@ -927,7 +1052,7 @@ class Policy:
         s += len(card.energies or []) * 8
         d = CARD.get(card.id)
         if d is not None:
-            for aid in (d.attacks or []):
+            for aid in d.attacks or []:
                 a = ATK.get(aid)
                 if a is not None and satisfies([int(e) for e in (card.energies or [])], a.energies):
                     s += 60 + (a.damage or 0) * 0.2
@@ -965,7 +1090,7 @@ class Policy:
         if o.playerIndex is not None and o.playerIndex != self.me:
             s = 100.0
             if isinstance(holder, Pokemon):
-                s += (50 if o.area == AreaType.ACTIVE else 0)
+                s += 50 if o.area == AreaType.ACTIVE else 0
                 s += len(holder.energies or []) * 8 + prize_yield(holder.id) * 10
             return s
         # our own attachment being discarded: prefer losing Ignition & co
@@ -1015,7 +1140,9 @@ class Policy:
                 CARD.get(c.id) is not None
                 and CARD[c.id].cardType == CardType.POKEMON
                 and (CARD[c.id].basic or c.id in self.cfg["setup_active"])
-                for c in (self.my.hand or []) if c is not None)
+                for c in (self.my.hand or [])
+                if c is not None
+            )
             return -10 if has_starter else 100
         return 50  # ACTIVATE / FIRST_EFFECT / COIN_HEAD: default yes
 
@@ -1066,11 +1193,16 @@ class Policy:
             return 1
         return 0
 
-    COST_CONTEXTS = {SelectContext.DISCARD, SelectContext.TO_DECK,
-                     SelectContext.TO_DECK_BOTTOM, SelectContext.TO_PRIZE,
-                     SelectContext.DISCARD_CARD_OR_ATTACHED_CARD,
-                     SelectContext.DISCARD_ENERGY, SelectContext.DISCARD_ENERGY_CARD,
-                     SelectContext.DISCARD_TOOL_CARD}
+    COST_CONTEXTS = {
+        SelectContext.DISCARD,
+        SelectContext.TO_DECK,
+        SelectContext.TO_DECK_BOTTOM,
+        SelectContext.TO_PRIZE,
+        SelectContext.DISCARD_CARD_OR_ATTACHED_CARD,
+        SelectContext.DISCARD_ENERGY,
+        SelectContext.DISCARD_ENERGY_CARD,
+        SelectContext.DISCARD_TOOL_CARD,
+    }
 
     def choose(self):
         sel = self.sel
@@ -1085,14 +1217,15 @@ class Policy:
         hi = min(sel.maxCount, n)
         order = sorted(range(n), key=lambda i: -scores[i])
         cost_ctx = self.ctx in self.COST_CONTEXTS and all(
-            o.playerIndex in (None, self.me) for o in sel.option)
+            o.playerIndex in (None, self.me) for o in sel.option
+        )
         if cost_ctx:
             chosen = order[:lo]
         else:
             chosen = [i for i in order if scores[i] > 0][:hi]
             if len(chosen) < lo:
                 extra = [i for i in order if i not in chosen]
-                chosen += extra[:lo - len(chosen)]
+                chosen += extra[: lo - len(chosen)]
         if not chosen and lo > 0:
             chosen = order[:lo]
         # pivotal-decision determinized search: re-pick single selections
@@ -1101,8 +1234,7 @@ class Policy:
                 klass, cands = self._search_candidates(scores, order)
             except Exception:
                 klass, cands = None, None
-            if (cands and len(cands) >= 2 and chosen[0] in cands
-                    and klass not in SEARCH_OFF):
+            if cands and len(cands) >= 2 and chosen[0] in cands and klass not in SEARCH_OFF:
                 # policy pick first: det_search treats cands[0] as incumbent
                 cands.remove(chosen[0])
                 cands.insert(0, chosen[0])
@@ -1159,14 +1291,16 @@ class Policy:
                 # attack choice / timing, but only when there is no clean KO
                 if plan.wins:
                     return None, None
-                if plan.ko and plan.target_bi == 0 and not (
-                        plan.needs_energy or plan.needs_switch or plan.retreat_fuel):
+                if (
+                    plan.ko
+                    and plan.target_bi == 0
+                    and not (plan.needs_energy or plan.needs_switch or plan.retreat_fuel)
+                ):
                     return None, None
-                cands = [i for i in order
-                         if sel.option[i].type == OptionType.ATTACK
-                         and scores[i] > 0][:SEARCH_MAX_CANDS - 1]
-                endi = next((i for i in order
-                             if sel.option[i].type == OptionType.END), None)
+                cands = [
+                    i for i in order if sel.option[i].type == OptionType.ATTACK and scores[i] > 0
+                ][: SEARCH_MAX_CANDS - 1]
+                endi = next((i for i in order if sel.option[i].type == OptionType.END), None)
                 if endi is not None and endi not in cands:
                     cands.append(endi)
                 return "atk", (cands if len(cands) >= 2 else None)
@@ -1198,32 +1332,35 @@ class Policy:
             # move isn't a build-up action.
             if not BEAM_ON or plan.wins:
                 return None, None
-            _CONSTRUCTIVE = (OptionType.PLAY, OptionType.ATTACH,
-                             OptionType.EVOLVE, OptionType.ABILITY,
-                             OptionType.RETREAT, OptionType.ATTACK)
+            _CONSTRUCTIVE = (
+                OptionType.PLAY,
+                OptionType.ATTACH,
+                OptionType.EVOLVE,
+                OptionType.ABILITY,
+                OptionType.RETREAT,
+                OptionType.ATTACK,
+            )
             if tt not in _CONSTRUCTIVE:
                 return None, None
-            cands = [i for i in order
-                     if sel.option[i].type in _CONSTRUCTIVE
-                     and scores[i] > 0][:SEARCH_MAX_CANDS]
-            endi = next((i for i in order
-                         if sel.option[i].type == OptionType.END), None)
-            if (endi is not None and endi not in cands
-                    and len(cands) < SEARCH_MAX_CANDS):
+            cands = [i for i in order if sel.option[i].type in _CONSTRUCTIVE and scores[i] > 0][
+                :SEARCH_MAX_CANDS
+            ]
+            endi = next((i for i in order if sel.option[i].type == OptionType.END), None)
+            if endi is not None and endi not in cands and len(cands) < SEARCH_MAX_CANDS:
                 cands.append(endi)
             return "seq", (cands if len(cands) >= 2 else None)
         if ctx in (SelectContext.SWITCH, SelectContext.TO_ACTIVE):
             # gust target (opponent options) or our promotion / retreat target
-            gust = any(o.playerIndex is not None and o.playerIndex != self.me
-                       for o in sel.option)
+            gust = any(o.playerIndex is not None and o.playerIndex != self.me for o in sel.option)
             cands = [i for i in order if scores[i] > 0][:SEARCH_MAX_CANDS]
-            return ("gust" if gust else "promote"), (
-                cands if len(cands) >= 2 else None)
+            return ("gust" if gust else "promote"), (cands if len(cands) >= 2 else None)
         if ctx == SelectContext.DISCARD_ENERGY_CARD:
             # Crushing Hammer & co: which opponent energy to remove
-            cands = [i for i in order
-                     if sel.option[i].playerIndex is not None
-                     and sel.option[i].playerIndex != self.me][:SEARCH_MAX_CANDS]
+            cands = [
+                i
+                for i in order
+                if sel.option[i].playerIndex is not None and sel.option[i].playerIndex != self.me
+            ][:SEARCH_MAX_CANDS]
             return "hammer", (cands if len(cands) >= 2 else None)
         return None, None
 
@@ -1282,17 +1419,18 @@ class Policy:
 
 # ------------------------------------------------------------ search world
 
+
 def sample_own_hidden(obs, me):
     ps = obs.current.players[me]
     unseen = Counter(DECK)
     seen = Counter()
-    for c in (ps.hand or []):
+    for c in ps.hand or []:
         if c is not None:
             seen[c.id] += 1
-    for c in (ps.discard or []):
+    for c in ps.discard or []:
         if c is not None:
             seen[c.id] += 1
-    for c in (ps.prize or []):
+    for c in ps.prize or []:
         if c is not None:
             seen[c.id] += 1
     for zone in ((ps.active or []), (ps.bench or [])):
@@ -1300,14 +1438,14 @@ def sample_own_hidden(obs, me):
             if p is None:
                 continue
             seen[p.id] += 1
-            for c in (p.energyCards or []):
+            for c in p.energyCards or []:
                 seen[c.id] += 1
-            for c in (p.tools or []):
+            for c in p.tools or []:
                 seen[c.id] += 1
-            for c in (p.preEvolution or []):
+            for c in p.preEvolution or []:
                 if c is not None:
                     seen[c.id] += 1
-    for c in (obs.current.stadium or []):
+    for c in obs.current.stadium or []:
         if c is not None and c.playerIndex == me:
             seen[c.id] += 1
     unseen.subtract(seen)
@@ -1318,7 +1456,7 @@ def sample_own_hidden(obs, me):
     need = n_deck + n_prize
     if len(pool) < need:
         pool = pool + [FILLER_CARD] * (need - len(pool))
-    return pool[:n_deck], pool[n_deck:n_deck + n_prize]
+    return pool[:n_deck], pool[n_deck : n_deck + n_prize]
 
 
 def _opp_energy_id(obs, me):
@@ -1328,11 +1466,11 @@ def _opp_energy_id(obs, me):
     for p in list(ps.active or []) + list(ps.bench or []):
         if p is None:
             continue
-        for c in (p.energyCards or []):
+        for c in p.energyCards or []:
             d = CARD.get(c.id)
             if d is not None and d.cardType == CardType.BASIC_ENERGY:
                 cnt[c.id] += 1
-    for c in (ps.discard or []):
+    for c in ps.discard or []:
         if c is not None:
             d = CARD.get(c.id)
             if d is not None and d.cardType == CardType.BASIC_ENERGY:
@@ -1420,6 +1558,7 @@ def verify_win(obs, me, worlds=3, budget=1.2):
 
 # ------------------------------------------------------- pivotal search
 
+
 def eval_world(cur, me, base_my_pr, base_op_pr):
     """Score a rollout endpoint from our perspective."""
     if cur.result >= 0:
@@ -1457,10 +1596,8 @@ def eval_world(cur, me, base_my_pr, base_op_pr):
     s = 10_000.0 * (my_taken - op_taken)
     # closing in on the last prizes matters more than parity alone
     s -= 1_500.0 * len(my.prize or [])
-    my_board = [p for p in list(my.active or []) + list(my.bench or [])
-                if p is not None]
-    op_board = [p for p in list(op.active or []) + list(op.bench or [])
-                if p is not None]
+    my_board = [p for p in list(my.active or []) + list(my.bench or []) if p is not None]
+    op_board = [p for p in list(op.active or []) + list(op.bench or []) if p is not None]
     s += sum(p.hp for p in my_board) * 1.0
     s -= sum(p.hp for p in op_board) * 1.0
     s += sum(len(p.energies or []) for p in my_board) * 25.0
@@ -1485,18 +1622,24 @@ def rollout_value(st, me, horizon, base_my_pr, base_op_pr, deadline, coin_budget
         if sel is None or not sel.option:
             return None
         if sel.context == SelectContext.COIN_HEAD:
-            yes = next((i for i, o in enumerate(sel.option)
-                        if o.type == OptionType.YES), 0)
-            no = next((i for i, o in enumerate(sel.option)
-                       if o.type == OptionType.NO), yes)
+            yes = next((i for i, o in enumerate(sel.option) if o.type == OptionType.YES), 0)
+            no = next((i for i, o in enumerate(sel.option) if o.type == OptionType.NO), yes)
             if coin_budget > 0 and yes != no:
                 _S["coins"] += 1
-                v1 = rollout_value(search_step(st.searchId, [yes]), me, horizon,
-                                   base_my_pr, base_op_pr, deadline, 0)
+                v1 = rollout_value(
+                    search_step(st.searchId, [yes]),
+                    me,
+                    horizon,
+                    base_my_pr,
+                    base_op_pr,
+                    deadline,
+                    0,
+                )
                 if v1 is None:
                     return None
-                v2 = rollout_value(search_step(st.searchId, [no]), me, horizon,
-                                   base_my_pr, base_op_pr, deadline, 0)
+                v2 = rollout_value(
+                    search_step(st.searchId, [no]), me, horizon, base_my_pr, base_op_pr, deadline, 0
+                )
                 if v2 is None:
                     return None
                 return 0.5 * (v1 + v2)
@@ -1527,8 +1670,9 @@ def _beam_kind(st, me, start_turn):
     return "live"
 
 
-def beam_turn_value(root_id, first_choice, me, start_turn, horizon,
-                    base_my_pr, base_op_pr, deadline):
+def beam_turn_value(
+    root_id, first_choice, me, start_turn, horizon, base_my_pr, base_op_pr, deadline
+):
     """Beam-search OUR remaining turn after `first_choice`, then model the
     opponent's reply with the policy to `horizon`; return our best achievable
     leaf value (max over our action sequences, opponent fixed-policy).
@@ -1580,8 +1724,9 @@ def beam_turn_value(root_id, first_choice, me, start_turn, horizon,
             elif k != "dead":
                 terminals.append(c)
         if new_live:
-            new_live.sort(key=lambda s: -eval_world(
-                s.observation.current, me, base_my_pr, base_op_pr))
+            new_live.sort(
+                key=lambda s: -eval_world(s.observation.current, me, base_my_pr, base_op_pr)
+            )
             live = new_live[:BEAM_WIDTH]
         else:
             live = []
@@ -1591,8 +1736,7 @@ def beam_turn_value(root_id, first_choice, me, start_turn, horizon,
         return None
     _S["depth_sum"] += depth
     _S["lines"] += 1
-    scored = [(eval_world(t.observation.current, me, base_my_pr, base_op_pr), t)
-              for t in terminals]
+    scored = [(eval_world(t.observation.current, me, base_my_pr, base_op_pr), t) for t in terminals]
     scored.sort(key=lambda x: -x[0])
     best = None
     for se, t in scored[:BEAM_TERMK]:
@@ -1600,8 +1744,7 @@ def beam_turn_value(root_id, first_choice, me, start_turn, horizon,
         if cur.result >= 0 or cur.turn >= horizon or time.time() > deadline:
             v = se
         else:
-            v = rollout_value(t, me, horizon, base_my_pr, base_op_pr,
-                              deadline, 1)
+            v = rollout_value(t, me, horizon, base_my_pr, base_op_pr, deadline, 1)
             if v is None:
                 v = se
             else:
@@ -1645,13 +1788,19 @@ def det_search(pol, cands):
             for ci in cands:
                 try:
                     if BEAM_ON:
-                        v = beam_turn_value(root.searchId, [ci], me, start_turn,
-                                            horizon, base_my_pr, base_op_pr,
-                                            deadline)
+                        v = beam_turn_value(
+                            root.searchId,
+                            [ci],
+                            me,
+                            start_turn,
+                            horizon,
+                            base_my_pr,
+                            base_op_pr,
+                            deadline,
+                        )
                     else:
                         st = search_step(root.searchId, [ci])
-                        v = rollout_value(st, me, horizon, base_my_pr,
-                                          base_op_pr, deadline, 1)
+                        v = rollout_value(st, me, horizon, base_my_pr, base_op_pr, deadline, 1)
                 except Exception:
                     v = None
                 if v is None:
@@ -1714,20 +1863,24 @@ def run_search(pol, cands):
 
 # ------------------------------------------------------------ entry point
 
+
 def _game_reset():
     if DEBUG and _S["moves"]:
         n = max(_S["searches"], 1)
         lines = max(_S["lines"], 1)
-        print(f"[a2] searches={_S['searches']} t={_S['t']:.2f}s "
-              f"({_S['t'] / n:.3f}s/ea) worlds={_S['worlds']} "
-              f"cands={_S['cands']} nodes={_S['nodes']} "
-              f"({_S['nodes'] / n:.0f}/search) lines={_S['lines']} "
-              f"mean_depth={_S['depth_sum'] / lines:.1f} "
-              f"opp_rollouts={_S['opp_rollouts']} coins={_S['coins']} "
-              f"overrides={_S['overrides']} fallbacks={_S['fallbacks']} "
-              f"moves={_S['moves']} max_move={_S['max_move']:.2f}s "
-              f"{dict(_S['by_class'])}",
-              file=sys.stderr, flush=True)
+        print(
+            f"[a2] searches={_S['searches']} t={_S['t']:.2f}s "
+            f"({_S['t'] / n:.3f}s/ea) worlds={_S['worlds']} "
+            f"cands={_S['cands']} nodes={_S['nodes']} "
+            f"({_S['nodes'] / n:.0f}/search) lines={_S['lines']} "
+            f"mean_depth={_S['depth_sum'] / lines:.1f} "
+            f"opp_rollouts={_S['opp_rollouts']} coins={_S['coins']} "
+            f"overrides={_S['overrides']} fallbacks={_S['fallbacks']} "
+            f"moves={_S['moves']} max_move={_S['max_move']:.2f}s "
+            f"{dict(_S['by_class'])}",
+            file=sys.stderr,
+            flush=True,
+        )
     _S.update(_fresh_stats())
     _G["search_t"] = 0.0
     _G["lethal_fail"] = set()

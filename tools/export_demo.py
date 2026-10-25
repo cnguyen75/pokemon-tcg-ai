@@ -8,9 +8,11 @@ only, and folds the extra "knocked out" event the engine logs for each
 pre-evolution card under a knocked-out evolved Pokemon (the stage-1/stage-2
 card and the cards beneath it all move to the discard pile). Needs no engine.
 """
+
+from datetime import date
 import json
 import sys
-from datetime import date
+
 
 SCHEMA = "ptcg-replay/1"
 
@@ -23,8 +25,13 @@ def fold_knockouts(events, evolved_from):
     out = []
     for e in events:
         prev = out[-1] if out else None
-        if (e["e"] == "knocked_out" and prev is not None and prev["e"] == "knocked_out"
-                and prev["who"] == e["who"] and e["card"] in prev["_chain"]):
+        if (
+            e["e"] == "knocked_out"
+            and prev is not None
+            and prev["e"] == "knocked_out"
+            and prev["who"] == e["who"]
+            and e["card"] in prev["_chain"]
+        ):
             prev["_chain"] |= evolved_from.get(e["card"], set())
             continue
         e = dict(e)
@@ -54,22 +61,27 @@ def main():
         search = s["search"]
         if search is not None:
             search = dict(search)
-            search["overrode_policy"] = (search["picked"] is not None
-                                         and search["picked"] != search["candidates"][0])
-        t["decisions"].append({
-            "context": s["context"],
-            "events_before": fold_knockouts(s["events"], evo),
-            "state": s["state"],
-            "options": s["options"],
-            "chosen": s["chosen"],
-            "search": search,
-            "position_value": s["position_value"],
-        })
+            search["overrode_policy"] = (
+                search["picked"] is not None and search["picked"] != search["candidates"][0]
+            )
+        t["decisions"].append(
+            {
+                "context": s["context"],
+                "events_before": fold_knockouts(s["events"], evo),
+                "state": s["state"],
+                "options": s["options"],
+                "chosen": s["chosen"],
+                "search": search,
+                "position_value": s["position_value"],
+            }
+        )
     demo = {
         "schema": SCHEMA,
         "about": {
-            "what": ("One complete local game between the submitted agent and a local "
-                     "stand-in opponent, recorded decision by decision."),
+            "what": (
+                "One complete local game between the submitted agent and a local "
+                "stand-in opponent, recorded decision by decision."
+            ),
             "agent": raw["agent"],
             "opponent": raw["opponent"],
             "seed": raw["seed"],
@@ -81,21 +93,30 @@ def main():
                 f"RECORDING.json --seed {raw['seed']}",
                 "python tools/export_demo.py RECORDING.json demo.json",
             ],
-            "value_scale": ("search mean_value and position_value are the agent's leaf "
-                            "evaluation on a 0-1000 scale: 0.6 x the AlphaZero value head's "
-                            "win probability + 0.4 x a squashed handcrafted score, times 1000. "
-                            "Terminal positions score 1000 (win) or 0 (loss)."),
-            "scores": ("options[].score is the scripted policy's score; higher is preferred, "
-                       "and options scoring 0 or less are not picked unless the rules force a pick."),
-            "search_rule": ("the search compares candidates[0] (the policy's pick) with up to "
-                            "four challengers over the sampled worlds; a challenger replaces it "
-                            "only if its summed value beats the pick's by more than "
-                            "margin_per_world x worlds."),
+            "value_scale": (
+                "search mean_value and position_value are the agent's leaf "
+                "evaluation on a 0-1000 scale: 0.6 x the AlphaZero value head's "
+                "win probability + 0.4 x a squashed handcrafted score, times 1000. "
+                "Terminal positions score 1000 (win) or 0 (loss)."
+            ),
+            "scores": (
+                "options[].score is the scripted policy's score; higher is preferred, "
+                "and options scoring 0 or less are not picked unless the rules force a pick."
+            ),
+            "search_rule": (
+                "the search compares candidates[0] (the policy's pick) with up to "
+                "four challengers over the sampled worlds; a challenger replaces it "
+                "only if its summed value beats the pick's by more than "
+                "margin_per_world x worlds."
+            ),
             "content": "card and attack names, HP, damage and counts only; no card text or art",
         },
-        "result": {"winner": raw["winner"], "first_player": raw["first_player"],
-                   "final_events": fold_knockouts(raw["final_events"], evo),
-                   "final_state": raw["final_state"]},
+        "result": {
+            "winner": raw["winner"],
+            "first_player": raw["first_player"],
+            "final_events": fold_knockouts(raw["final_events"], evo),
+            "final_state": raw["final_state"],
+        },
         "turns": [turns[k] for k in sorted(turns)],
     }
     with open(sys.argv[2], "w") as f:

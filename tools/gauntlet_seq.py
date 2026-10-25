@@ -6,17 +6,20 @@ Usage: uv run --python 3.13 --with numpy python tools/gauntlet_seq.py \\
     AGENT_DIR TAG --games-per 300 --procs 13 --seed-base 8800
 Agent env (CG_A2_POLICY etc.) passed through the environment.
 """
+
 import argparse
 import json
 import math
+from multiprocessing import Pool
 import os
 import sys
 import time
-from multiprocessing import Pool
+
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from league import play_games, wilson  # noqa: E402
 from gauntlet import PANEL  # noqa: E402
+from league import play_games, wilson  # noqa: E402
+
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(REPO, "runs", "policy_gauntlet")
@@ -49,18 +52,19 @@ def main():
         l = sum(1 for r in rr if r == -1)
         d = sum(1 for r in rr if r == 0)
         p, lo, hi = wilson(w, w + l)
-        res[opp] = {"w": w, "l": l, "d": d, "wr": p, "lo": lo, "hi": hi,
-                    "weight": wt}
+        res[opp] = {"w": w, "l": l, "d": d, "wr": p, "lo": lo, "hi": hi, "weight": wt}
         wsum += wt * p
         wtot += wt
-        print(f"{opp:18s} w={wt:.3f} {w}-{l}-{d} "
-              f"WR {p*100:5.1f}% [{lo*100:.1f},{hi*100:.1f}]  "
-              f"({time.time()-t0:.0f}s)", flush=True)
+        print(
+            f"{opp:18s} w={wt:.3f} {w}-{l}-{d} "
+            f"WR {p * 100:5.1f}% [{lo * 100:.1f},{hi * 100:.1f}]  "
+            f"({time.time() - t0:.0f}s)",
+            flush=True,
+        )
     meta = wsum / wtot
     res["_meta_wr"] = meta
     json.dump(res, open(os.path.join(OUT, a.tag + ".json"), "w"), indent=1)
-    print(f"META-WEIGHTED WR: {meta*100:.2f}%   ({time.time()-t0:.0f}s)",
-          flush=True)
+    print(f"META-WEIGHTED WR: {meta * 100:.2f}%   ({time.time() - t0:.0f}s)", flush=True)
 
 
 if __name__ == "__main__":

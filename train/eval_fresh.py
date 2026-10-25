@@ -7,23 +7,32 @@ since the last training cycle -- daily/2026-07-04, v5games, and seed-3
 self-play -- intersected with the new nets' holdout, so every row is unseen
 by ALL nets being compared.
 """
+
 import glob
 import os
-import sys
 
 import numpy as np
+
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(REPO, "train", "data")
 HOLDOUT = 0.15
 SEED = 7
 
-DIRS = (
-    glob.glob(os.path.join(REPO, "episodes", "daily", "*"))
-    + [os.path.join(REPO, "episodes", d)
-       for d in ("day30", "ours", "v2games", "v3games", "v4games", "v5games",
-                 "v51games", "v52games", "v5recent")]
-)
+DIRS = glob.glob(os.path.join(REPO, "episodes", "daily", "*")) + [
+    os.path.join(REPO, "episodes", d)
+    for d in (
+        "day30",
+        "ours",
+        "v2games",
+        "v3games",
+        "v4games",
+        "v5games",
+        "v51games",
+        "v52games",
+        "v5recent",
+    )
+]
 
 # data the SHIPPED v5 net never trained on (cycle-1 stopped at 07-04 + v5games)
 FRESH_TOKENS = ("2026-07-05", "v51games", "v52games", "v5recent")
@@ -49,7 +58,7 @@ def auc(y, s):
         while j + 1 < len(s) and s_sorted[j + 1] == s_sorted[i]:
             j += 1
         if j > i:
-            ranks[order[i:j + 1]] = (i + j) / 2.0 + 1
+            ranks[order[i : j + 1]] = (i + j) / 2.0 + 1
         i = j + 1
     n1 = y.sum()
     n0 = len(y) - n1
@@ -113,8 +122,10 @@ CANDS = ("cand_A_64x32", "cand_B_128x64x32", "cand_C_wep0.7", "cand_D_wep0.3")
 
 
 def report(tag, ep, y, X, hc, fresh_mask):
-    print(f"\n===== {tag}: {len(np.unique(ep[fresh_mask]))} fresh episodes, "
-          f"{fresh_mask.sum()} rows =====")
+    print(
+        f"\n===== {tag}: {len(np.unique(ep[fresh_mask]))} fresh episodes, "
+        f"{fresh_mask.sum()} rows ====="
+    )
     epf, yf, Xf, hcf = ep[fresh_mask], y[fresh_mask], X[fresh_mask], hc[fresh_mask]
     preds = {name: npz_predict(p, Xf) for name, p in NETS.items()}
     preds["handcrafted"] = hcf
@@ -122,16 +133,19 @@ def report(tag, ep, y, X, hc, fresh_mask):
     for name, s in preds.items():
         keys, vals = per_episode_aucs(epf, yf, s)
         per_ep[name] = dict(zip(keys.tolist(), vals.tolist()))
-        print(f"{name:18s} overall auc {auc(yf, s):.4f}  "
-              f"per-episode auc {vals.mean():.4f} (n={len(vals)})")
+        print(
+            f"{name:18s} overall auc {auc(yf, s):.4f}  "
+            f"per-episode auc {vals.mean():.4f} (n={len(vals)})"
+        )
     # paired deltas vs shipped
-    for name in ("cand_A_64x32", "cand_B_128x64x32", "cand_C_wep0.7",
-                 "cand_D_wep0.3"):
+    for name in ("cand_A_64x32", "cand_B_128x64x32", "cand_C_wep0.7", "cand_D_wep0.3"):
         common = sorted(set(per_ep[name]) & set(per_ep["shipped_v5"]))
         d = np.asarray([per_ep[name][e] - per_ep["shipped_v5"][e] for e in common])
         t = d.mean() / (d.std() / np.sqrt(len(d)) + 1e-12)
-        print(f"paired {name} minus shipped: {d.mean():+.4f} "
-              f"(t={t:.2f}, wins {(d > 0).mean() * 100:.0f}% of {len(d)} eps)")
+        print(
+            f"paired {name} minus shipped: {d.mean():+.4f} "
+            f"(t={t:.2f}, wins {(d > 0).mean() * 100:.0f}% of {len(d)} eps)"
+        )
 
 
 def main():
@@ -146,17 +160,24 @@ def main():
     files = []
     for dpath in DIRS:
         files += sorted(glob.glob(os.path.join(dpath, "*.json")))
-    fresh_ids = {i for i, p in enumerate(files)
-                 if any(tok in p for tok in FRESH_TOKENS)}
-    fresh_row = np.fromiter((e in fresh_ids for e in epe), dtype=bool,
-                            count=len(epe))
-    print(f"episodes: {len(files)} files, fresh files {len(fresh_ids)}, "
-          f"holdout eps {len(np.unique(epe[ho_e]))}")
+    fresh_ids = {i for i, p in enumerate(files) if any(tok in p for tok in FRESH_TOKENS)}
+    fresh_row = np.fromiter((e in fresh_ids for e in epe), dtype=bool, count=len(epe))
+    print(
+        f"episodes: {len(files)} files, fresh files {len(fresh_ids)}, "
+        f"holdout eps {len(np.unique(epe[ho_e]))}"
+    )
 
-    report("FRESH ladder episodes ∩ holdout (unseen by ALL nets)",
-           epe, ye, Xe, hce, ho_e & fresh_row)
-    report("ALL fresh ladder episodes (shipped: unseen; candidates: 85% seen)",
-           epe, ye, Xe, hce, fresh_row)
+    report(
+        "FRESH ladder episodes ∩ holdout (unseen by ALL nets)", epe, ye, Xe, hce, ho_e & fresh_row
+    )
+    report(
+        "ALL fresh ladder episodes (shipped: unseen; candidates: 85% seen)",
+        epe,
+        ye,
+        Xe,
+        hce,
+        fresh_row,
+    )
 
     # ---- selfplay (reproduce the second rng call in training order)
     sp_files = sorted(glob.glob(os.path.join(DATA, "selfplay_*.npz")))
@@ -171,16 +192,15 @@ def main():
         hcs_.append(z["hc"])
         if p.endswith("_3.npz"):
             seed3.update(np.unique(e).tolist())
-    Xs = np.hstack([np.concatenate(Xs_),
-                    np.tanh(np.concatenate(hcs_) / 25_000.0)[:, None]]
-                   ).astype(np.float32)
+    Xs = np.hstack([np.concatenate(Xs_), np.tanh(np.concatenate(hcs_) / 25_000.0)[:, None]]).astype(
+        np.float32
+    )
     ys = np.concatenate(ys_)
     eps = np.concatenate(eps_)
     hcs = np.concatenate(hcs_)
     tr_s, ho_s = split_by_episode(eps, rng)
     fresh_s = np.fromiter((e in seed3 for e in eps), dtype=bool, count=len(eps))
-    report("FRESH seed-3 selfplay ∩ holdout (unseen by ALL nets)",
-           eps, ys, Xs, hcs, ho_s & fresh_s)
+    report("FRESH seed-3 selfplay ∩ holdout (unseen by ALL nets)", eps, ys, Xs, hcs, ho_s & fresh_s)
 
 
 if __name__ == "__main__":

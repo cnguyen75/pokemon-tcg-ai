@@ -2,8 +2,10 @@
 __file__ defined (mimics kaggle_environments), then play 2 self-play games
 through cg.game. Exits nonzero on any crash.
 """
+
 import os
 import sys
+
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 AGENT = os.path.join(REPO, "agent2")
@@ -12,14 +14,15 @@ sys.path.insert(0, CG_HOME)
 
 # exec the agent source with no __file__, from the agent dir (kaggle-style)
 os.chdir(AGENT)
-src = open(os.path.join(AGENT, "main.py"), "r", encoding="utf-8").read()
+src = open(os.path.join(AGENT, "main.py"), encoding="utf-8").read()
 ns = {"__name__": "__main__"}  # deliberately no __file__
 exec(compile(src, "<agent-exec>", "exec"), ns)
 agent_fn = ns["agent"]
 deck = ns["DECK"]
 assert len(deck) == 60, "DECK must have 60 cards"
 
-from cg.game import battle_start, battle_select, battle_finish  # noqa: E402
+from cg.game import battle_finish, battle_select, battle_start  # noqa: E402
+
 
 for g in range(2):
     obs, start = battle_start(deck, deck)

@@ -5,6 +5,7 @@ train/extract_policy.option_features (dict) vs
 agent2/policy_net._option_features (dataclass via to_observation_class), and the
 101-dim state features, and the final per-option scores/argmax.
 """
+
 import glob
 import json
 import os
@@ -12,15 +13,16 @@ import sys
 
 import numpy as np
 
+
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(REPO, "agent2"))
 sys.path.insert(0, os.path.join(REPO, "train"))
 
-import value_features as vf
-from cg.api import (all_card_data, all_attack, to_observation_class,
-                    SelectType, SelectContext)
-import extract_policy as ep
-import policy_net as pn
+from cg.api import SelectContext, SelectType, all_attack, all_card_data, to_observation_class  # noqa: E402
+import extract_policy as ep  # noqa: E402
+import policy_net as pn  # noqa: E402
+import value_features as vf  # noqa: E402
+
 
 CARD = {c.cardId: c for c in all_card_data()}
 ATK = {a.attackId: a for a in all_attack()}
@@ -80,17 +82,16 @@ for path in files:
                 continue
             if len(inf_opts) != len(tr_opts):
                 continue
-            state_maxdiff = max(state_maxdiff,
-                                float(np.max(np.abs(np.array(tr_state) - np.array(inf_state)))))
+            state_maxdiff = max(
+                state_maxdiff, float(np.max(np.abs(np.array(tr_state) - np.array(inf_state))))
+            )
             for a, b in zip(tr_opts, inf_opts):
-                opt_maxdiff = max(opt_maxdiff,
-                                  float(np.max(np.abs(np.array(a) - np.array(b)))))
+                opt_maxdiff = max(opt_maxdiff, float(np.max(np.abs(np.array(a) - np.array(b)))))
                 n_opt += 1
             # end-to-end scores via inference path
             zs = pn.score_options(live_cur, me, live_opts)
             # reference: build same rows from training feats and run numpy fwd
-            Xt = np.array([list(tf) + list(tr_state) for tf in tr_opts],
-                          dtype=np.float32)
+            Xt = np.array([list(tf) + list(tr_state) for tf in tr_opts], dtype=np.float32)
             xt = (Xt - pn._W["mean"]) / pn._W["std"]
             h = np.maximum(xt @ pn._W["W1t"] + pn._W["b1"], 0.0)
             h = np.maximum(h @ pn._W["W2t"] + pn._W["b2"], 0.0)
@@ -102,5 +103,7 @@ for path in files:
 print(f"decisions {n_dec}, options {n_opt}")
 print(f"option feature max abs diff : {opt_maxdiff:.3e}")
 print(f"state  feature max abs diff : {state_maxdiff:.3e}")
-print(f"score argmax agreement      : {score_argmatch}/{n_dec} "
-      f"({100*score_argmatch/max(n_dec,1):.1f}%)")
+print(
+    f"score argmax agreement      : {score_argmatch}/{n_dec} "
+    f"({100 * score_argmatch / max(n_dec, 1):.1f}%)"
+)

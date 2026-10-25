@@ -6,12 +6,14 @@ matchstats.py, but over real Kaggle replays instead of local games).
 Usage:
   uv run --python 3.13 python tools/replay_stats.py ARCHKEY   # e.g. Alakazam
 """
+
+from collections import Counter
 import csv
 import glob
 import json
 import os
 import sys
-from collections import Counter
+
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MY_TEAM = "Colin19"
@@ -40,8 +42,7 @@ def main():
     key = sys.argv[1]
     agg = {"W": Counter(), "L": Counter()}
     games = {"W": 0, "L": 0}
-    for f in glob.glob(os.path.join(ROOT, "episodes", "mine",
-                                    "episode-*-replay.json")):
+    for f in glob.glob(os.path.join(ROOT, "episodes", "mine", "episode-*-replay.json")):
         try:
             d = json.load(open(f))
             tn = d["info"]["TeamNames"]
@@ -49,8 +50,7 @@ def main():
                 continue
             my = tn.index(MY_TEAM)
             da = d["steps"][0][0]["visualize"][0]["action"]
-            opp_poke = Counter(nm(c) for c in da[1 - my]
-                               if "Pok" in CAT.get(c, ""))
+            opp_poke = Counter(nm(c) for c in da[1 - my] if "Pok" in CAT.get(c, ""))
             if not any(key.lower() in n.lower() for n in opp_poke):
                 continue
             res = "W" if d["rewards"][my] == 1 else "L"
@@ -69,10 +69,18 @@ def main():
                 turn += 1
             elif t == 10:  # play card
                 n = nm(cid)
-                if n in ("Judge", "Unfair Stamp", "Xerosic’s Machinations",
-                         "Lillie's Determination", "Wally's Compassion",
-                         "Boss’s Orders", "Hero’s Cape", "Enhanced Hammer",
-                         "Crushing Hammer", "Night Stretcher"):
+                if n in (
+                    "Judge",
+                    "Unfair Stamp",
+                    "Xerosic’s Machinations",
+                    "Lillie's Determination",
+                    "Wally's Compassion",
+                    "Boss’s Orders",
+                    "Hero’s Cape",
+                    "Enhanced Hammer",
+                    "Crushing Hammer",
+                    "Night Stretcher",
+                ):
                     c[f"{side}_{n}"] += 1
             elif t == 15:  # attack
                 c[f"{side}_atk_{lg.get('attackId')}"] += 1
@@ -88,7 +96,7 @@ def main():
         if not g:
             continue
         for k, v in sorted(agg[res].items(), key=lambda kv: -kv[1] / g):
-            print(f"  {k}: {v}  ({v/g:.2f}/game)")
+            print(f"  {k}: {v}  ({v / g:.2f}/game)")
 
 
 if __name__ == "__main__":

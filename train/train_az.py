@@ -14,6 +14,7 @@ value AUC, plus param count and inference ms/forward.
 
 Chunk-friendly: prints every epoch, writes best-by-policy-top1 checkpoint.
 """
+
 import argparse
 import os
 import sys
@@ -21,13 +22,22 @@ import time
 
 import numpy as np
 
+
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(REPO, "agent_az"))
 sys.path.insert(0, os.path.join(REPO, "agent2"))
 
-OPT_TYPE_NAMES = {7: "PLAY", 8: "ATTACH", 9: "EVOLVE", 10: "ABILITY",
-                  11: "DISCARD", 12: "RETREAT", 13: "ATTACK", 14: "END",
-                  15: "SKILL"}
+OPT_TYPE_NAMES = {
+    7: "PLAY",
+    8: "ATTACH",
+    9: "EVOLVE",
+    10: "ABILITY",
+    11: "DISCARD",
+    12: "RETREAT",
+    13: "ATTACK",
+    14: "END",
+    15: "SKILL",
+}
 
 
 def by_episode_split(ep, frac=0.2, seed=0):
@@ -50,10 +60,10 @@ def main():
     ap.add_argument("--out", default=os.path.join(REPO, "agent_az", "az_net.pt"))
     args = ap.parse_args()
 
+    from az_net import D_OPT, D_STATE, AZNet, param_count
+    from sklearn.metrics import roc_auc_score
     import torch
     import torch.nn.functional as F
-    from az_net import AZNet, param_count, D_STATE, D_OPT
-    from sklearn.metrics import roc_auc_score
 
     dev = "cuda" if torch.cuda.is_available() else "cpu"
     torch.manual_seed(0)
@@ -61,7 +71,13 @@ def main():
     # ---------------- POLICY data (policy.npz) ----------------
     dp = np.load(os.path.join(REPO, "train", "data", "policy.npz"))
     X_opt, X_state, offs, chosen, ep_p, dtype = (
-        dp["X_opt"], dp["X_state"], dp["offs"], dp["chosen"], dp["ep"], dp["dtype_"])
+        dp["X_opt"],
+        dp["X_state"],
+        dp["offs"],
+        dp["chosen"],
+        dp["ep"],
+        dp["dtype_"],
+    )
     n_dec = len(chosen)
     Dopt = X_opt.shape[1]
     Dstate = X_state.shape[1]
@@ -70,13 +86,16 @@ def main():
     sizes = np.array([offs[i + 1] - offs[i] for i in range(n_dec)])
     M = int(sizes.max())
     tr_dec, te_dec = by_episode_split(ep_p, seed=0)
-    print(f"[policy] decisions {n_dec} (tr {len(tr_dec)} te {len(te_dec)}), "
-          f"D_opt {Dopt} D_state {Dstate}, max opts {M}", flush=True)
+    print(
+        f"[policy] decisions {n_dec} (tr {len(tr_dec)} te {len(te_dec)}), "
+        f"D_opt {Dopt} D_state {Dstate}, max opts {M}",
+        flush=True,
+    )
 
     # standardize state + option feats on TRAIN
     tr_opt_mask = np.zeros(len(X_opt), dtype=bool)
     for di in tr_dec:
-        tr_opt_mask[offs[di]:offs[di + 1]] = True
+        tr_opt_mask[offs[di] : offs[di + 1]] = True
     o_mu, o_sd = X_opt[tr_opt_mask].mean(0), X_opt[tr_opt_mask].std(0) + 1e-6
     Xopt_n = ((X_opt - o_mu) / o_sd).astype(np.float32)
     # state normalization is computed on the VALUE dataset below (larger, more
@@ -96,8 +115,7 @@ def main():
             Xs[r] = Xstate_n[di]
             mask[r, :m] = 1.0
             ch[r] = chosen[di]
-        return (torch.tensor(Xs), torch.tensor(Xo), torch.tensor(mask),
-                torch.tensor(ch))
+        return (torch.tensor(Xs), torch.tensor(Xo), torch.tensor(mask), torch.tensor(ch))
 
     # ---------------- VALUE data (episodes.npz) ----------------
     dv = np.load(os.path.join(REPO, "train", "data", "episodes.npz"))
@@ -124,13 +142,17 @@ def main():
     yv_tr = torch.tensor(yv[trv].astype(np.float32), device=dev)
     Xv_te = torch.tensor(Xv_n[tev], device=dev)
     yv_te = yv[tev].astype(np.float32)
-    print(f"[value]  states {len(yv)} (tr {len(trv)} te {len(tev)}), "
-          f"base y mean {yv.mean():.3f}", flush=True)
+    print(
+        f"[value]  states {len(yv)} (tr {len(trv)} te {len(tev)}), base y mean {yv.mean():.3f}",
+        flush=True,
+    )
 
     # ---------------- model ----------------
     net = AZNet(D_STATE, D_OPT, d_model=args.dmodel, n_blocks=args.nblocks).to(dev)
-    print(f"[net] d_model {args.dmodel} n_blocks {args.nblocks}, "
-          f"params {param_count(net):,}", flush=True)
+    print(
+        f"[net] d_model {args.dmodel} n_blocks {args.nblocks}, params {param_count(net):,}",
+        flush=True,
+    )
     opt = torch.optim.Adam(net.parameters(), lr=args.lr, weight_decay=1e-5)
 
     def eval_policy():
@@ -172,10 +194,10 @@ def main():
         nb = 0
         n_vbatch = max(1, Nv // B)
         for bi, k in enumerate(range(0, Np, B)):
-            bp = idx_p[k:k + B]
+            bp = idx_p[k : k + B]
             # value minibatch (cycle through value data, always full-size)
             vk = bi % n_vbatch
-            bv = idx_v[vk * B:vk * B + B]
+            bv = idx_v[vk * B : vk * B + B]
             opt.zero_grad()
             # policy loss (shared torso)
             h = net.encode(Xs_tr[bp])
@@ -193,13 +215,15 @@ def main():
             nb += 1
         t1, t3 = eval_policy()
         auc, vacc = eval_value()
-        print(f"ep {epoch+1:2d} pol_loss {pol_loss/nb:.4f} val_loss "
-              f"{val_loss/nb:.4f} | test top1 {t1:.4f} top3 {t3:.4f} | "
-              f"val AUC {auc:.4f} acc {vacc:.3f}", flush=True)
+        print(
+            f"ep {epoch + 1:2d} pol_loss {pol_loss / nb:.4f} val_loss "
+            f"{val_loss / nb:.4f} | test top1 {t1:.4f} top3 {t3:.4f} | "
+            f"val AUC {auc:.4f} acc {vacc:.3f}",
+            flush=True,
+        )
         if t1 > best_t1:
             best_t1 = t1
-            best_state = {k2: v.detach().cpu().clone()
-                          for k2, v in net.state_dict().items()}
+            best_state = {k2: v.detach().cpu().clone() for k2, v in net.state_dict().items()}
 
     if best_state is not None:
         net.load_state_dict(best_state)
@@ -211,10 +235,15 @@ def main():
     # per-decision-type policy breakdown on held-out
     net.eval()
     with torch.no_grad():
-        norder = torch.argsort(
-            net.policy_logits_from_h(net.encode(Xs_te), Xo_te, Mk_te),
-            dim=1, descending=True).cpu().numpy()
+        norder = (
+            torch.argsort(
+                net.policy_logits_from_h(net.encode(Xs_te), Xo_te, Mk_te), dim=1, descending=True
+            )
+            .cpu()
+            .numpy()
+        )
     from collections import defaultdict
+
     per = defaultdict(lambda: [0, 0])
     for r, di in enumerate(te_dec):
         ch = int(chosen[di])
@@ -238,25 +267,33 @@ def main():
     print("AZ BC BOOTSTRAP  (by-episode holdout)")
     print("=" * 66)
     print(f"  params            {param_count(net):,}  (d_model {args.dmodel})")
-    print(f"  POLICY  top-1 {t1:.4f}  top-3 {t3:.4f}   "
-          f"(bolt-on ref 0.336/0.659)")
+    print(f"  POLICY  top-1 {t1:.4f}  top-3 {t3:.4f}   (bolt-on ref 0.336/0.659)")
     print(f"  VALUE   AUC   {auc:.4f}  acc {vacc:.3f}")
     print(f"  leaf inference    {ms:.4f} ms/forward ({med} opts, {dev})")
     print("\n  --- policy top-1 by chosen-option type ---")
     for dt in sorted(per, key=lambda k: -per[k][0]):
         n_, c_ = per[dt]
         name = OPT_TYPE_NAMES.get(dt, str(dt))
-        print(f"    {name:10s} {n_:6d}  top1 {c_/max(n_,1):.3f}")
+        print(f"    {name:10s} {n_:6d}  top1 {c_ / max(n_, 1):.3f}")
 
     # save checkpoint + normalization stats (inference needs them)
-    torch.save({
-        "state_dict": net.state_dict(),
-        "d_model": args.dmodel, "n_blocks": args.nblocks,
-        "d_state": D_STATE, "d_opt": D_OPT,
-        "s_mu": s_mu.astype(np.float32), "s_sd": s_sd.astype(np.float32),
-        "o_mu": o_mu.astype(np.float32), "o_sd": o_sd.astype(np.float32),
-        "policy_top1": t1, "policy_top3": t3, "value_auc": auc,
-    }, args.out)
+    torch.save(
+        {
+            "state_dict": net.state_dict(),
+            "d_model": args.dmodel,
+            "n_blocks": args.nblocks,
+            "d_state": D_STATE,
+            "d_opt": D_OPT,
+            "s_mu": s_mu.astype(np.float32),
+            "s_sd": s_sd.astype(np.float32),
+            "o_mu": o_mu.astype(np.float32),
+            "o_sd": o_sd.astype(np.float32),
+            "policy_top1": t1,
+            "policy_top3": t3,
+            "value_auc": auc,
+        },
+        args.out,
+    )
     print(f"\nsaved -> {args.out}")
 
 

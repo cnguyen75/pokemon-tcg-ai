@@ -8,29 +8,40 @@ both-side symmetry are learnable). Label = did that perspective's player win.
 Usage: uv run --python 3.13 --with numpy python train/extract_episodes.py
 Writes train/data/episodes.npz  (X float32, y int8, ep int32, hc float32).
 """
+
+import glob
 import json
 import os
 import sys
-import glob
 
 import numpy as np
+
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(REPO, "agent2"))
 sys.path.insert(0, os.path.join(REPO, "data", "sample_submission", "sample_submission"))
 
-import value_features as vf
-from cg.api import all_card_data, all_attack
+from cg.api import all_attack, all_card_data  # noqa: E402
+import value_features as vf  # noqa: E402
+
 
 CARD = {c.cardId: c for c in all_card_data()}
 ATK = {a.attackId: a for a in all_attack()}
 
-DIRS = (
-    glob.glob(os.path.join(REPO, "episodes", "daily", "*"))
-    + [os.path.join(REPO, "episodes", d)
-       for d in ("day30", "ours", "v2games", "v3games", "v4games", "v5games",
-                 "v51games", "v52games", "v5recent")]
-)
+DIRS = glob.glob(os.path.join(REPO, "episodes", "daily", "*")) + [
+    os.path.join(REPO, "episodes", d)
+    for d in (
+        "day30",
+        "ours",
+        "v2games",
+        "v3games",
+        "v4games",
+        "v5games",
+        "v51games",
+        "v52games",
+        "v5recent",
+    )
+]
 
 
 def parse_file(path, ep_id):
@@ -42,8 +53,13 @@ def parse_file(path, ep_id):
     if not isinstance(d, dict) or "steps" not in d:
         return [], [], []  # meta_summary.json and friends
     rew = d.get("rewards")
-    if (not isinstance(rew, list) or len(rew) != 2
-            or rew[0] is None or rew[1] is None or rew[0] == rew[1]):
+    if (
+        not isinstance(rew, list)
+        or len(rew) != 2
+        or rew[0] is None
+        or rew[1] is None
+        or rew[0] == rew[1]
+    ):
         return [], [], []
     won = [1 if rew[0] > rew[1] else 0, 1 if rew[1] > rew[0] else 0]
     X, y, hc = [], [], []
@@ -86,8 +102,7 @@ def main():
             ys.extend(y)
             hcs.extend(hc)
             eps.extend([i] * len(X))
-            src = os.path.relpath(os.path.dirname(path),
-                                  os.path.join(REPO, "episodes"))
+            src = os.path.relpath(os.path.dirname(path), os.path.join(REPO, "episodes"))
             st = by_src.setdefault(src, [0, 0])
             st[0] += 1
             st[1] += len(X)
@@ -104,8 +119,10 @@ def main():
     out = os.path.join(REPO, "train", "data", "episodes.npz")
     os.makedirs(os.path.dirname(out), exist_ok=True)
     np.savez_compressed(out, X=X, y=y, ep=ep, hc=hc)
-    print(f"episodes used: {n_used}, rows: {len(y)}, "
-          f"winrate {y.mean():.3f}, features {X.shape[1]} -> {out}")
+    print(
+        f"episodes used: {n_used}, rows: {len(y)}, "
+        f"winrate {y.mean():.3f}, features {X.shape[1]} -> {out}"
+    )
 
 
 if __name__ == "__main__":

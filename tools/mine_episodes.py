@@ -6,33 +6,40 @@ then writes a compact decklist/meta summary next to them.
 
 Run: python tools/mine_episodes.py [YYYY-MM-DD]  (default: yesterday UTC)
 """
+
+from collections import Counter, defaultdict
 import csv
+from datetime import UTC, datetime, timedelta
 import json
 import os
 import subprocess
 import sys
-from collections import Counter, defaultdict
-from datetime import datetime, timedelta, timezone
+
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 KAGGLE = os.path.expanduser("~/.local/bin/kaggle")
 MAX_FILES = int(os.environ.get("MINE_MAX_FILES", "400"))  # ~1.5GB/day; full day is ~21GB
 
+
 def sh(args):
     return subprocess.run(args, capture_output=True, text=True, timeout=600)
+
 
 def main():
     if len(sys.argv) > 1:
         day = sys.argv[1]
     else:
-        day = (datetime.now(timezone.utc) - timedelta(days=1)).strftime("%Y-%m-%d")
+        day = (datetime.now(UTC) - timedelta(days=1)).strftime("%Y-%m-%d")
     slug = f"kaggle/pokemon-tcg-ai-battle-episodes-{day}"
     outdir = os.path.join(ROOT, "episodes", "daily", day)
     os.makedirs(outdir, exist_ok=True)
 
     r = sh([KAGGLE, "datasets", "files", slug, "--page-size", str(MAX_FILES)])
-    files = [ln.split()[0] for ln in r.stdout.splitlines()
-             if ln.strip().endswith(".json") or (ln.split() and ln.split()[0].endswith(".json"))]
+    files = [
+        ln.split()[0]
+        for ln in r.stdout.splitlines()
+        if ln.strip().endswith(".json") or (ln.split() and ln.split()[0].endswith(".json"))
+    ]
     files = files[:MAX_FILES]
     if not files:
         print(f"no files found for {slug}; stdout head: {r.stdout[:300]} err: {r.stderr[:300]}")
@@ -63,8 +70,13 @@ def main():
             continue
         for i in range(2):
             c = Counter(decks[i])
-            key = " / ".join(sorted(names.get(cid, "?") for cid, ct in c.most_common(8)
-                                    if 20 < cid < 1077 and ct >= 3)[:3])
+            key = " / ".join(
+                sorted(
+                    names.get(cid, "?")
+                    for cid, ct in c.most_common(8)
+                    if 20 < cid < 1077 and ct >= 3
+                )[:3]
+            )
             arch[key][1] += 1
             if rew[i] == 1:
                 arch[key][0] += 1
@@ -73,7 +85,7 @@ def main():
         json.dump([{"archetype": k, "wins": w, "games": g} for w, g, k in summary], fh, indent=1)
     print("top archetypes:")
     for w, g, k in summary[:10]:
-        print(f"  {g:4d} games {100*w/max(g,1):5.1f}% wr  {k}")
+        print(f"  {g:4d} games {100 * w / max(g, 1):5.1f}% wr  {k}")
     return 0
 
 

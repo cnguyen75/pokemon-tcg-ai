@@ -14,15 +14,18 @@ Same seeds across agents -> paired comparison. Control = baselines/v11.
 Usage:
   uv run --python 3.13 --with numpy,torch python tools/screen_v12.py
 """
+
+from collections import Counter
 import math
+from multiprocessing import Pool
 import os
 import sys
 import time
-from collections import Counter
-from multiprocessing import Pool
+
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from league import load_agent, play_games, wilson  # noqa: E402
+
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -49,9 +52,12 @@ def main():
     # until the loaded agent's actual deck is printed).
     for name, path in AGENTS.items():
         c = Counter(load_agent(path).DECK)
-        print(f"DECK {name}: hammer={c[1120]} cape={c[1159]} ball={c[1121]} "
-              f"boss={c[1182]} stretcher={c[1097]} judge={c[1213]} "
-              f"total={sum(c.values())}", flush=True)
+        print(
+            f"DECK {name}: hammer={c[1120]} cape={c[1159]} ball={c[1121]} "
+            f"boss={c[1182]} stretcher={c[1097]} judge={c[1213]} "
+            f"total={sum(c.values())}",
+            flush=True,
+        )
 
     for aname, apath in AGENTS.items():
         for oname, opath in OPPS.items():
@@ -64,10 +70,13 @@ def main():
             w = sum(r == 1 for r in res)
             l = sum(r == -1 for r in res)
             _, lo, hi = wilson(w, w + l)
-            print(f"{aname:5s} vs {oname:10s}: {w}-{l} "
-                  f"({100 * w / max(w + l, 1):.1f}%) "
-                  f"CI[{100 * lo:.1f},{100 * hi:.1f}]  "
-                  f"{len(res)}g {time.time() - t0:.0f}s", flush=True)
+            print(
+                f"{aname:5s} vs {oname:10s}: {w}-{l} "
+                f"({100 * w / max(w + l, 1):.1f}%) "
+                f"CI[{100 * lo:.1f},{100 * hi:.1f}]  "
+                f"{len(res)}g {time.time() - t0:.0f}s",
+                flush=True,
+            )
     print("SCREEN_DONE", flush=True)
 
 

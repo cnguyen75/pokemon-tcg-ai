@@ -16,6 +16,7 @@ symmetric my-side/opp-side view from that player's perspective.
 
 import math
 
+
 _RAINBOW = 10
 _TEAM_ROCKET = 11  # psychic(5) / darkness(7)
 
@@ -25,22 +26,52 @@ _TEAM_ROCKET = 11  # psychic(5) / darkness(7)
 # runtime detector (flagship card first, then early-game shell cards).  Only
 # revealed opponent cards are used (board + preEvolution chains + discard), so
 # the signal exists identically at extraction and inference time.
-_ARCH_FLAG = [(678, "lucario"), (648, "grimmsnarl"), (743, "alakazam"),
-              (1031, "starmie"), (190, "archaludon"), (345, "crustle_wall"),
-              (879, "trevenant"), (861, "froslass"), (756, "kangaskhan"),
-              (723, "abomasnow"), (269, "bellibolt")]
-_ARCH_EARLY = [(677, "lucario"), (646, "grimmsnarl"), (741, "alakazam"),
-               (1030, "starmie"), (169, "archaludon"), (344, "crustle_wall"),
-               (878, "trevenant"), (722, "abomasnow"), (268, "bellibolt"),
-               (270, "bellibolt"), (271, "bellibolt"),
-               (673, "lucario"), (674, "lucario"), (675, "lucario"),
-               (676, "lucario")]
+_ARCH_FLAG = [
+    (678, "lucario"),
+    (648, "grimmsnarl"),
+    (743, "alakazam"),
+    (1031, "starmie"),
+    (190, "archaludon"),
+    (345, "crustle_wall"),
+    (879, "trevenant"),
+    (861, "froslass"),
+    (756, "kangaskhan"),
+    (723, "abomasnow"),
+    (269, "bellibolt"),
+]
+_ARCH_EARLY = [
+    (677, "lucario"),
+    (646, "grimmsnarl"),
+    (741, "alakazam"),
+    (1030, "starmie"),
+    (169, "archaludon"),
+    (344, "crustle_wall"),
+    (878, "trevenant"),
+    (722, "abomasnow"),
+    (268, "bellibolt"),
+    (270, "bellibolt"),
+    (271, "bellibolt"),
+    (673, "lucario"),
+    (674, "lucario"),
+    (675, "lucario"),
+    (676, "lucario"),
+]
 # one-hot categories = the ordered set of names the runtime detector emits
-_ARCH_NAMES = ["lucario", "grimmsnarl", "alakazam", "starmie", "archaludon",
-               "crustle_wall", "trevenant", "froslass", "kangaskhan",
-               "abomasnow", "bellibolt"]
+_ARCH_NAMES = [
+    "lucario",
+    "grimmsnarl",
+    "alakazam",
+    "starmie",
+    "archaludon",
+    "crustle_wall",
+    "trevenant",
+    "froslass",
+    "kangaskhan",
+    "abomasnow",
+    "bellibolt",
+]
 # observable opponent capability cards (revealed in discard / stadium)
-_HEAL_IDS = frozenset({1147})               # Jumbo Ice Cream
+_HEAL_IDS = frozenset({1147})  # Jumbo Ice Cream
 _DISRUPT_IDS = frozenset({1182, 1213, 1244})  # Boss's Orders, Judge, Full Metal Lab
 _FULL_METAL_LAB = 1244
 
@@ -106,10 +137,10 @@ def _stage(d):
 def _poke_iter(ps):
     """Board pokemon of a player state: (pokemon, is_active)."""
     out = []
-    for p in (_g(ps, "active", []) or []):
+    for p in _g(ps, "active", []) or []:
         if p is not None:
             out.append((p, True))
-    for p in (_g(ps, "bench", []) or []):
+    for p in _g(ps, "bench", []) or []:
         if p is not None:
             out.append((p, False))
     return out
@@ -124,7 +155,7 @@ def _atk_ready_best(p, def_id, CARD, ATK):
     att = [int(e) for e in (_g(p, "energies", []) or [])]
     dd = CARD.get(def_id) if def_id else None
     ready, best, missing = 0, 0, 3
-    for aid in (pd.attacks or []):
+    for aid in pd.attacks or []:
         a = ATK.get(aid)
         if a is None:
             continue
@@ -141,31 +172,72 @@ def _atk_ready_best(p, def_id, CARD, ATK):
 
 
 _SIDE = [
-    "prizes", "deck", "hand", "discard",
-    "cond_poison", "cond_burn", "cond_sleep", "cond_para", "cond_conf",
-    "act_exists", "act_hp", "act_maxhp", "act_hpfrac", "act_dmg_taken",
-    "act_energy", "act_ready", "act_best_dmg", "act_can_ko", "act_yield",
-    "act_retreat_deficit", "act_stage", "act_ex",
-    "bench_n", "bench_energy", "bench_ready", "bench_hp_total",
-    "bench_max_yield", "bench_min_hpfrac",
-    "board_best_dmg", "board_can_ko", "board_energy", "board_evolved",
+    "prizes",
+    "deck",
+    "hand",
+    "discard",
+    "cond_poison",
+    "cond_burn",
+    "cond_sleep",
+    "cond_para",
+    "cond_conf",
+    "act_exists",
+    "act_hp",
+    "act_maxhp",
+    "act_hpfrac",
+    "act_dmg_taken",
+    "act_energy",
+    "act_ready",
+    "act_best_dmg",
+    "act_can_ko",
+    "act_yield",
+    "act_retreat_deficit",
+    "act_stage",
+    "act_ex",
+    "bench_n",
+    "bench_energy",
+    "bench_ready",
+    "bench_hp_total",
+    "bench_max_yield",
+    "bench_min_hpfrac",
+    "board_best_dmg",
+    "board_can_ko",
+    "board_energy",
+    "board_evolved",
     # v2 additions (transfer-friendly across archetypes)
-    "act_missing_energy", "act_dmg_frac", "act_two_turn_ko",
-    "board_dmg_taken", "bench_free", "close_to_win",
+    "act_missing_energy",
+    "act_dmg_frac",
+    "act_two_turn_ko",
+    "board_dmg_taken",
+    "bench_free",
+    "close_to_win",
 ]
 
 # opponent archetype one-hot + observable capability signals (cycle-2 addition)
-ARCH_FEATURE_NAMES = (["arch_" + n for n in _ARCH_NAMES]
-                      + ["arch_opp_ex", "arch_opp_mega",
-                         "arch_opp_heal", "arch_opp_disrupt"])
+ARCH_FEATURE_NAMES = ["arch_" + n for n in _ARCH_NAMES] + [
+    "arch_opp_ex",
+    "arch_opp_mega",
+    "arch_opp_heal",
+    "arch_opp_disrupt",
+]
 N_ARCH_FEATURES = len(ARCH_FEATURE_NAMES)
 
-FEATURE_NAMES = (["my_" + n for n in _SIDE] + ["op_" + n for n in _SIDE]
-                 + ["turn", "my_turn", "prize_diff",
-                    "me_win_if_ko", "op_win_if_ko",
-                    "my_deck_low", "op_deck_low",
-                    "stadium_mine", "stadium_theirs"]
-                 + ARCH_FEATURE_NAMES)
+FEATURE_NAMES = (
+    ["my_" + n for n in _SIDE]
+    + ["op_" + n for n in _SIDE]
+    + [
+        "turn",
+        "my_turn",
+        "prize_diff",
+        "me_win_if_ko",
+        "op_win_if_ko",
+        "my_deck_low",
+        "op_deck_low",
+        "stadium_mine",
+        "stadium_theirs",
+    ]
+    + ARCH_FEATURE_NAMES
+)
 
 N_FEATURES = len(FEATURE_NAMES)
 
@@ -246,8 +318,7 @@ def _side_feats(ps, opp_active, CARD, ATK):
     f.append(b_minfrac)
 
     board_best = max(act_best, b_best)
-    n_evolved = sum(1 for p, _a in _poke_iter(ps)
-                    if _stage(CARD.get(_g(p, "id", 0))) > 0)
+    n_evolved = sum(1 for p, _a in _poke_iter(ps) if _stage(CARD.get(_g(p, "id", 0))) > 0)
     act_energy = len(_g(act, "energies", []) or []) if act is not None else 0
     f.append(min(board_best, 400) / 400.0)
     f.append(1.0 if (def_hp and board_best >= def_hp) else 0.0)
@@ -257,8 +328,7 @@ def _side_feats(ps, opp_active, CARD, ATK):
     f.append(min(act_missing, 3) / 3.0)
     f.append(min(act_best / def_hp, 2.0) / 2.0 if def_hp else 0.0)
     f.append(1.0 if (def_hp and 2 * act_best >= def_hp) else 0.0)
-    dmg_taken = sum(max(_g(p, "maxHp", 0) - _g(p, "hp", 0), 0)
-                    for p, _a in _poke_iter(ps))
+    dmg_taken = sum(max(_g(p, "maxHp", 0) - _g(p, "hp", 0), 0) for p, _a in _poke_iter(ps))
     f.append(min(dmg_taken, 600) / 600.0)
     f.append(max(_g(ps, "benchMax", 5) - len(bench), 0) / 5.0)
     f.append(1.0 if len(prize) <= 2 else 0.0)
@@ -270,10 +340,10 @@ def _opp_seen_ids(op):
     seen = set()
     for p, _a in _poke_iter(op):
         seen.add(_g(p, "id", 0))
-        for c in (_g(p, "preEvolution", []) or []):
+        for c in _g(p, "preEvolution", []) or []:
             if c is not None:
                 seen.add(_g(c, "id", 0))
-    for c in (_g(op, "discard", []) or []):
+    for c in _g(op, "discard", []) or []:
         if c is not None:
             seen.add(_g(c, "id", 0))
     return seen
@@ -321,14 +391,17 @@ def _arch_block(op, cur, me, CARD):
         if d.megaEx:
             mega = 1.0
     dids = set()
-    for c in (_g(op, "discard", []) or []):
+    for c in _g(op, "discard", []) or []:
         if c is not None:
             dids.add(_g(c, "id", 0))
     heal = 1.0 if (_HEAL_IDS & dids) else 0.0
     disrupt = 1.0 if (_DISRUPT_IDS & dids) else 0.0
     stad = _g(cur, "stadium", []) or []
-    if stad and _g(stad[0], "id", 0) == _FULL_METAL_LAB \
-            and _g(stad[0], "playerIndex", -1) == (1 - me):
+    if (
+        stad
+        and _g(stad[0], "id", 0) == _FULL_METAL_LAB
+        and _g(stad[0], "playerIndex", -1) == (1 - me)
+    ):
         disrupt = 1.0
     f.append(min(ex_count, 4) / 4.0)
     f.append(mega)
@@ -356,8 +429,8 @@ def extract(cur, me, CARD, ATK):
     f.append((op_pr - my_pr) / 6.0)
     op_y = _pyield(CARD.get(_g(op_act, "id", 0))) if op_act is not None else 1
     my_y = _pyield(CARD.get(_g(my_act, "id", 0))) if my_act is not None else 1
-    f.append(1.0 if my_pr <= op_y else 0.0)   # KOing their active wins me the game
-    f.append(1.0 if op_pr <= my_y else 0.0)   # ... and vice versa
+    f.append(1.0 if my_pr <= op_y else 0.0)  # KOing their active wins me the game
+    f.append(1.0 if op_pr <= my_y else 0.0)  # ... and vice versa
     f.append(1.0 if _g(my, "deckCount", 60) <= 3 else 0.0)
     f.append(1.0 if _g(op, "deckCount", 60) <= 3 else 0.0)
     stad = _g(cur, "stadium", []) or []

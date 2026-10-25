@@ -17,31 +17,39 @@ Writes train/data/policy.npz:
   ep      (n_dec,)         episode id (for by-episode holdout)
   dtype   (n_dec,)         decision-type code (option type of the CHOSEN option)
 """
+
+import glob
 import json
 import os
 import sys
-import glob
 
 import numpy as np
+
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(REPO, "agent2"))
 
-import value_features as vf
-from cg.api import (all_card_data, all_attack, to_observation_class,
-                    OptionType, AreaType, SelectType, SelectContext)
-import main as agent2_main  # the scripted Policy
+from cg.api import (  # noqa: E402
+    AreaType,
+    OptionType,
+    SelectContext,
+    SelectType,
+    all_attack,
+    all_card_data,
+    to_observation_class,
+)
+import main as agent2_main  # the scripted Policy  # noqa: E402
+import value_features as vf  # noqa: E402
+
 
 CARD = {c.cardId: c for c in all_card_data()}
 ATK = {a.attackId: a for a in all_attack()}
 
 # Top-player replay sources (mirror extract_episodes.py plus daily).
-DIRS = (
-    glob.glob(os.path.join(REPO, "episodes", "daily", "*"))
-    + [os.path.join(REPO, "episodes", d)
-       for d in ("day30", "v5games", "v51games", "v52games", "v5recent",
-                 "v6games", "ours")]
-)
+DIRS = glob.glob(os.path.join(REPO, "episodes", "daily", "*")) + [
+    os.path.join(REPO, "episodes", d)
+    for d in ("day30", "v5games", "v51games", "v52games", "v5recent", "v6games", "ours")
+]
 
 N_OPT_TYPES = 17  # OptionType enum size
 
@@ -75,7 +83,7 @@ def _card_at(cur_players, me, area, index, playerIndex):
 
 def _card_static(cid):
     """(is_pokemon, is_item, is_supp, is_stadium, is_energy, is_tool,
-        is_basic, is_stage1, is_stage2, is_ex, is_mega, hp_norm, retreat_norm)"""
+    is_basic, is_stage1, is_stage2, is_ex, is_mega, hp_norm, retreat_norm)"""
     d = CARD.get(cid)
     if d is None:
         return [0.0] * 13
@@ -114,9 +122,16 @@ def option_features(o, cur, me):
     area = _g(o, "area")
     index = _g(o, "index")
     pidx = _g(o, "playerIndex")
-    if t in (OptionType.PLAY, OptionType.ATTACH, OptionType.EVOLVE,
-             OptionType.ABILITY, OptionType.DISCARD, OptionType.CARD,
-             OptionType.TOOL_CARD, OptionType.ENERGY_CARD):
+    if t in (
+        OptionType.PLAY,
+        OptionType.ATTACH,
+        OptionType.EVOLVE,
+        OptionType.ABILITY,
+        OptionType.DISCARD,
+        OptionType.CARD,
+        OptionType.TOOL_CARD,
+        OptionType.ENERGY_CARD,
+    ):
         card = _card_at(players, me, area, index, pidx)
         cid = _g(card, "id", 0)
     f += _card_static(cid)  # 13
@@ -135,8 +150,9 @@ def option_features(o, cur, me):
             atk_feats[1] = min(len(a.energies), 5) / 5.0
             atk_feats[2] = 1.0 if (op_hp and dmg >= op_hp) else 0.0
             n_prz = len(op.get("prize") or [])
-            atk_feats[3] = 1.0 if (op_hp and dmg >= op_hp
-                                   and n_prz <= vf._pyield(CARD.get(op_id))) else 0.0
+            atk_feats[3] = (
+                1.0 if (op_hp and dmg >= op_hp and n_prz <= vf._pyield(CARD.get(op_id))) else 0.0
+            )
     f += atk_feats  # 4
 
     # target-side context: does this option target ACTIVE vs BENCH, my vs opp
@@ -160,8 +176,13 @@ def parse_file(path, ep_id):
     if not isinstance(d, dict) or "steps" not in d:
         return None
     rew = d.get("rewards")
-    if (not isinstance(rew, list) or len(rew) != 2
-            or rew[0] is None or rew[1] is None or rew[0] == rew[1]):
+    if (
+        not isinstance(rew, list)
+        or len(rew) != 2
+        or rew[0] is None
+        or rew[1] is None
+        or rew[0] == rew[1]
+    ):
         return None
     winner = 0 if rew[0] > rew[1] else 1
 
@@ -227,8 +248,7 @@ def main():
         res = parse_file(path, i)
         if res:
             n_games += 1
-            src = os.path.relpath(os.path.dirname(path),
-                                  os.path.join(REPO, "episodes"))
+            src = os.path.relpath(os.path.dirname(path), os.path.join(REPO, "episodes"))
             st = by_src.setdefault(src, [0, 0])
             st[0] += 1
             for state_feats, opt_feats, chosen, scripts, dtype in res:
@@ -243,7 +263,7 @@ def main():
                 dtype_l.append(dtype)
                 st[1] += 1
         if (i + 1) % 200 == 0:
-            print(f"  {i+1}/{len(files)} files, {len(chosen_l)} decisions", flush=True)
+            print(f"  {i + 1}/{len(files)} files, {len(chosen_l)} decisions", flush=True)
 
     print("--- decisions by source ---")
     for src in sorted(by_src):
@@ -263,9 +283,11 @@ def main():
     )
     n_opt = len(X_opt)
     n_dec = len(chosen_l)
-    print(f"games used {n_games}, decisions {n_dec}, options {n_opt}, "
-          f"mean_opts {n_opt/max(n_dec,1):.2f}, D_opt {D_OPT}, "
-          f"D_state {len(X_state[0]) if X_state else 0} -> {out}")
+    print(
+        f"games used {n_games}, decisions {n_dec}, options {n_opt}, "
+        f"mean_opts {n_opt / max(n_dec, 1):.2f}, D_opt {D_OPT}, "
+        f"D_state {len(X_state[0]) if X_state else 0} -> {out}"
+    )
 
 
 if __name__ == "__main__":

@@ -24,6 +24,7 @@ The output holds card and attack names, HP and damage numbers only: no card
 text or art. The agent is time-budgeted, so a second run with the same seed
 is not guaranteed to play the same game.
 """
+
 import argparse
 import json
 import os
@@ -31,18 +32,27 @@ import random
 import sys
 import time
 
+
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(REPO, "tools"))
 import league  # noqa: E402
+
 
 sys.path.insert(0, league.CG_HOME)
 from cg.api import AreaType, OptionType, SelectContext, to_observation_class  # noqa: E402
 from cg.game import battle_finish, battle_select, battle_start  # noqa: E402
 
+
 COND = ("poisoned", "burned", "asleep", "paralyzed", "confused")
-AREA = {AreaType.DECK: "deck", AreaType.HAND: "hand", AreaType.DISCARD: "discard",
-        AreaType.ACTIVE: "active", AreaType.BENCH: "bench", AreaType.PRIZE: "prize",
-        AreaType.LOOKING: "looking"}
+AREA = {
+    AreaType.DECK: "deck",
+    AreaType.HAND: "hand",
+    AreaType.DISCARD: "discard",
+    AreaType.ACTIVE: "active",
+    AreaType.BENCH: "bench",
+    AreaType.PRIZE: "prize",
+    AreaType.LOOKING: "looking",
+}
 
 
 class Recorder:
@@ -50,7 +60,7 @@ class Recorder:
         self.mod = mod
         self.card = mod.CARD
         self.atk = mod.ATK
-        self.top = None          # the Policy instance of the decision being recorded
+        self.top = None  # the Policy instance of the decision being recorded
         self.scores = []
         self.search = None
         self._wrap()
@@ -90,8 +100,11 @@ class Recorder:
             rec.search = {
                 "candidates": list(cands),
                 "worlds": len(full),
-                "mean_value": ([round(sum(w[i] for w in full) / len(full), 1)
-                                for i in range(len(cands))] if full else None),
+                "mean_value": (
+                    [round(sum(w[i] for w in full) / len(full), 1) for i in range(len(cands))]
+                    if full
+                    else None
+                ),
                 "margin_per_world": margin,
                 "picked": out,
             }
@@ -117,9 +130,13 @@ class Recorder:
     def poke(self, p):
         if p is None:
             return None
-        return {"name": self.name(p.id), "hp": p.hp, "maxHp": p.maxHp,
-                "energy": len(p.energies or []),
-                "tools": [self.name(t.id) for t in (p.tools or [])]}
+        return {
+            "name": self.name(p.id),
+            "hp": p.hp,
+            "maxHp": p.maxHp,
+            "energy": len(p.energies or []),
+            "tools": [self.name(t.id) for t in (p.tools or [])],
+        }
 
     def card_at(self, obs, area, index, player):
         c = self.mod.get_card(obs, area, index, player)
@@ -132,11 +149,15 @@ class Recorder:
             if t == OptionType.PLAY:
                 return f"Play {self.card_at(obs, AreaType.HAND, o.index, me)}"
             if t == OptionType.ATTACH:
-                return (f"Attach {self.card_at(obs, o.area, o.index, me)} to "
-                        f"{self.card_at(obs, o.inPlayArea, o.inPlayIndex, me)}")
+                return (
+                    f"Attach {self.card_at(obs, o.area, o.index, me)} to "
+                    f"{self.card_at(obs, o.inPlayArea, o.inPlayIndex, me)}"
+                )
             if t == OptionType.EVOLVE:
-                return (f"Evolve {self.card_at(obs, o.inPlayArea, o.inPlayIndex, me)} into "
-                        f"{self.card_at(obs, o.area, o.index, me)}")
+                return (
+                    f"Evolve {self.card_at(obs, o.inPlayArea, o.inPlayIndex, me)} into "
+                    f"{self.card_at(obs, o.area, o.index, me)}"
+                )
             if t == OptionType.ABILITY:
                 return f"Use ability of {self.card_at(obs, o.area, o.index, me)}"
             if t == OptionType.RETREAT:
@@ -153,7 +174,9 @@ class Recorder:
                 side = "" if pl == me else "opponent's "
                 if o.area == AreaType.PRIZE:
                     return "Prize card"
-                return f"{self.card_at(obs, o.area, o.index, pl)} ({side}{where})".replace(" ()", "")
+                return f"{self.card_at(obs, o.area, o.index, pl)} ({side}{where})".replace(
+                    " ()", ""
+                )
             if t == OptionType.NUMBER:
                 return f"Choose {o.number}"
             if t == OptionType.YES:
@@ -171,11 +194,15 @@ class Recorder:
     def snapshot(self, cur, me):
         out = []
         for i, p in enumerate(cur.players):
-            s = {"active": self.poke(p.active[0]) if p.active else None,
-                 "bench": [self.poke(b) for b in (p.bench or [])],
-                 "prizes": len(p.prize or []), "hand": p.handCount,
-                 "deck": p.deckCount, "discard": len(p.discard or []),
-                 "conditions": [c for c in COND if getattr(p, c, False)]}
+            s = {
+                "active": self.poke(p.active[0]) if p.active else None,
+                "bench": [self.poke(b) for b in (p.bench or [])],
+                "prizes": len(p.prize or []),
+                "hand": p.handCount,
+                "deck": p.deckCount,
+                "discard": len(p.discard or []),
+                "conditions": [c for c in COND if getattr(p, c, False)],
+            }
             if i == me and p.hand is not None:
                 s["hand_cards"] = [self.name(c.id) for c in p.hand]
             out.append(s)
@@ -192,26 +219,55 @@ class Recorder:
             elif t == 10:
                 ev.append({"who": who(p), "e": "play", "card": n(lg["cardId"])})
             elif t == 11:
-                ev.append({"who": who(p), "e": "attach", "card": n(lg["cardId"]),
-                           "to": n(lg["cardIdTarget"])})
+                ev.append(
+                    {
+                        "who": who(p),
+                        "e": "attach",
+                        "card": n(lg["cardId"]),
+                        "to": n(lg["cardIdTarget"]),
+                    }
+                )
             elif t == 12:
-                ev.append({"who": who(p), "e": "evolve", "into": n(lg["cardId"]),
-                           "from": n(lg["cardIdTarget"])})
+                ev.append(
+                    {
+                        "who": who(p),
+                        "e": "evolve",
+                        "into": n(lg["cardId"]),
+                        "from": n(lg["cardIdTarget"]),
+                    }
+                )
             elif t == 8:
-                ev.append({"who": who(p), "e": "switch", "active": n(lg["cardIdActive"]),
-                           "bench": n(lg["cardIdBench"])})
+                ev.append(
+                    {
+                        "who": who(p),
+                        "e": "switch",
+                        "active": n(lg["cardIdActive"]),
+                        "bench": n(lg["cardIdBench"]),
+                    }
+                )
             elif t == 15:
                 a = self.atk.get(lg.get("attackId"))
-                ev.append({"who": who(p), "e": "attack", "by": n(lg["cardId"]),
-                           "attack": a.name if a is not None else "attack"})
+                ev.append(
+                    {
+                        "who": who(p),
+                        "e": "attack",
+                        "by": n(lg["cardId"]),
+                        "attack": a.name if a is not None else "attack",
+                    }
+                )
             elif t == 16:
-                ev.append({"who": who(p), "e": "hp", "card": n(lg["cardId"]),
-                           "change": lg.get("value")})
+                ev.append(
+                    {"who": who(p), "e": "hp", "card": n(lg["cardId"]), "change": lg.get("value")}
+                )
             elif t == 22:
                 ev.append({"who": who(p), "e": "coin", "heads": bool(lg.get("head"))})
-            elif t in (6, 7) and lg.get("fromArea") in (AreaType.ACTIVE, AreaType.BENCH) \
-                    and lg.get("toArea") == AreaType.DISCARD and lg.get("cardId") \
-                    and getattr(self.card.get(lg["cardId"]), "hp", 0):
+            elif (
+                t in (6, 7)
+                and lg.get("fromArea") in (AreaType.ACTIVE, AreaType.BENCH)
+                and lg.get("toArea") == AreaType.DISCARD
+                and lg.get("cardId")
+                and getattr(self.card.get(lg["cardId"]), "hp", 0)
+            ):
                 ev.append({"who": who(p), "e": "knocked_out", "card": n(lg["cardId"])})
             elif t in (6, 7) and lg.get("fromArea") == AreaType.PRIZE:
                 ev.append({"who": who(p), "e": "prize"})
@@ -257,9 +313,13 @@ def main():
             "context": SelectContext(sel.context).name.lower(),
             "events": rec.events(obs.get("logs"), me),
             "state": rec.snapshot(o.current, me),
-            "options": [{"label": rec.label(o, opt, me),
-                         "score": (round(rec.scores[i], 1) if i < len(rec.scores) else None)}
-                        for i, opt in enumerate(sel.option)],
+            "options": [
+                {
+                    "label": rec.label(o, opt, me),
+                    "score": (round(rec.scores[i], 1) if i < len(rec.scores) else None),
+                }
+                for i, opt in enumerate(sel.option)
+            ],
             "chosen": list(choice),
             "search": rec.search,
         }
@@ -275,7 +335,8 @@ def main():
     out = {
         "agent": os.path.basename(args.agent.rstrip("/")),
         "opponent": os.path.basename(args.opponent.rstrip("/")),
-        "agent_seat": me, "seed": args.seed,
+        "agent_seat": me,
+        "seed": args.seed,
         "first_player": "agent" if obs["current"]["firstPlayer"] == me else "opponent",
         "winner": "agent" if result == me else ("opponent" if result == 1 - me else "draw"),
         "final_events": tail,
@@ -285,8 +346,10 @@ def main():
     }
     with open(args.out, "w") as f:
         json.dump(out, f, separators=(",", ":"))
-    print(f"{out['agent']} vs {out['opponent']}: winner {out['winner']}, "
-          f"{len(steps)} agent decisions, {out['seconds']}s -> {args.out}")
+    print(
+        f"{out['agent']} vs {out['opponent']}: winner {out['winner']}, "
+        f"{len(steps)} agent decisions, {out['seconds']}s -> {args.out}"
+    )
 
 
 if __name__ == "__main__":

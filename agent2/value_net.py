@@ -5,7 +5,9 @@ train/train_net.py and exposes predict(features) -> win probability.
 No torch/sklearn at inference; numpy only. If numpy or the weights file
 is unavailable, OK stays False and callers fall back to the handcrafted eval.
 """
+
 import os
+
 
 OK = False
 _W = None
@@ -26,8 +28,10 @@ def load(agent_dir=None):
     path = os.path.join(agent_dir, "value_net.npz")
     try:
         z = _np.load(path)
-        _W = {k: _np.asarray(z[k], dtype=_np.float32)
-              for k in ("mean", "std", "W1", "b1", "W2", "b2", "W3", "b3")}
+        _W = {
+            k: _np.asarray(z[k], dtype=_np.float32)
+            for k in ("mean", "std", "W1", "b1", "W2", "b2", "W3", "b3")
+        }
         # transpose once so the hot loop is x @ W
         _W["W1t"] = _W["W1"].T.copy()
         _W["W2t"] = _W["W2"].T.copy()

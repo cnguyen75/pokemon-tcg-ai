@@ -101,6 +101,7 @@ def process(app):
                 return score(app)
     return None
 
+
 # Prefer: edge cases first, main path last
 def process(app):
     if app is None or not app.is_complete:

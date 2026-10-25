@@ -10,21 +10,29 @@ move-match check can be reproduced against the exported numpy net.
 
 uv run --python 3.13 --with numpy --with torch python train/export_policy.py
 """
+
 import os
-import sys
 
 import numpy as np
 
+
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OPT_TYPE_NAMES = {7: "PLAY", 8: "ATTACH", 9: "EVOLVE", 10: "ABILITY",
-                  11: "DISCARD", 12: "RETREAT", 13: "ATTACK", 14: "END",
-                  15: "SKILL"}
+OPT_TYPE_NAMES = {
+    7: "PLAY",
+    8: "ATTACH",
+    9: "EVOLVE",
+    10: "ABILITY",
+    11: "DISCARD",
+    12: "RETREAT",
+    13: "ATTACK",
+    14: "END",
+    15: "SKILL",
+}
 
 
 def load():
     d = np.load(os.path.join(REPO, "train", "data", "policy.npz"))
-    return (d["X_opt"], d["X_state"], d["offs"], d["chosen"],
-            d["script"], d["ep"], d["dtype_"])
+    return (d["X_opt"], d["X_state"], d["offs"], d["chosen"], d["script"], d["ep"], d["dtype_"])
 
 
 def main():
@@ -36,8 +44,7 @@ def main():
     D_opt = X_opt.shape[1]
     D_state = X_state.shape[1]
     D = D_opt + D_state
-    print(f"decisions {n_dec}, options {len(X_opt)}, D_opt {D_opt}, "
-          f"D_state {D_state}", flush=True)
+    print(f"decisions {n_dec}, options {len(X_opt)}, D_opt {D_opt}, D_state {D_state}", flush=True)
 
     n_opt_total = len(X_opt)
     Xfull = np.empty((n_opt_total, D), dtype=np.float32)
@@ -92,9 +99,13 @@ def main():
         def __init__(self, d, h=64):
             super().__init__()
             self.net = nn.Sequential(
-                nn.Linear(d, h), nn.ReLU(), nn.Dropout(0.1),
-                nn.Linear(h, h), nn.ReLU(),
-                nn.Linear(h, 1))
+                nn.Linear(d, h),
+                nn.ReLU(),
+                nn.Dropout(0.1),
+                nn.Linear(h, h),
+                nn.ReLU(),
+                nn.Linear(h, 1),
+            )
 
         def forward(self, x):
             return self.net(x).squeeze(-1)
@@ -121,7 +132,7 @@ def main():
         net.train()
         rng.shuffle(idx)
         for k in range(0, N, BATCH):
-            bi = idx[k:k + BATCH]
+            bi = idx[k : k + BATCH]
             xb, mb, cb = Xtr_t[bi], Mtr_t[bi], Ctr_t[bi]
             opt.zero_grad()
             s = net(xb) + (mb - 1.0) * 1e9
@@ -132,10 +143,9 @@ def main():
         te1, te3 = eval_split(Xte_t, Mte_t, Cte)
         if te1 > best_t1:
             best_t1 = te1
-            best_state = {k2: v.cpu().clone()
-                          for k2, v in net.state_dict().items()}
+            best_state = {k2: v.cpu().clone() for k2, v in net.state_dict().items()}
         if (epoch + 1) % 10 == 0:
-            print(f"epoch {epoch+1} test t1 {te1:.4f} t3 {te3:.4f}", flush=True)
+            print(f"epoch {epoch + 1} test t1 {te1:.4f} t3 {te3:.4f}", flush=True)
 
     net.load_state_dict(best_state)
     net_t1, net_t3 = eval_split(Xte_t, Mte_t, Cte)
@@ -151,9 +161,19 @@ def main():
     b3 = sd_state["net.5.bias"].cpu().numpy().astype(np.float32)
 
     out = os.path.join(REPO, "agent2", "policy_net.npz")
-    np.savez_compressed(out, mean=mu.astype(np.float32), std=sd.astype(np.float32),
-                        W1=W1, b1=b1, W2=W2, b2=b2, W3=W3, b3=b3,
-                        D_opt=np.int64(D_opt), D_state=np.int64(D_state))
+    np.savez_compressed(
+        out,
+        mean=mu.astype(np.float32),
+        std=sd.astype(np.float32),
+        W1=W1,
+        b1=b1,
+        W2=W2,
+        b2=b2,
+        W3=W3,
+        b3=b3,
+        D_opt=np.int64(D_opt),
+        D_state=np.int64(D_state),
+    )
     print(f"wrote {out}", flush=True)
 
     # ---- verify numpy forward matches torch on held-out ----
@@ -169,8 +189,9 @@ def main():
         s = np_fwd(Xfull[a:b])
         if int(np.argmax(s)) == int(chosen[di]):
             match += 1
-    print(f"numpy-forward held-out top-1: {match/len(te_dec):.4f} "
-          f"(torch {net_t1:.4f})", flush=True)
+    print(
+        f"numpy-forward held-out top-1: {match / len(te_dec):.4f} (torch {net_t1:.4f})", flush=True
+    )
 
     # ---- dump held-out for behavioral move-match check ----
     hold_offs = [0]
@@ -191,7 +212,8 @@ def main():
         offs=np.asarray(hold_offs, dtype=np.int64),
         chosen=np.asarray(hold_chosen, dtype=np.int64),
         dtype_=np.asarray(hold_dtype, dtype=np.int64),
-        script=np.asarray(hold_script, dtype=np.float32))
+        script=np.asarray(hold_script, dtype=np.float32),
+    )
     print("wrote train/data/policy_holdout.npz", flush=True)
 
 

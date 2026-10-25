@@ -4,24 +4,47 @@ Usage: uv run --python 3.13 python tools/matchstats.py AGENT_A AGENT_B N [seed]
 Collects from agent A's engine log stream: what died on each side, gusts,
 capes, Wally heals, hammers, attack usage — split by win/loss for A.
 """
+
+from collections import Counter
 import csv
 import os
 import sys
-from collections import Counter
+
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CG_HOME = os.path.join(REPO, "data", "sample_submission", "sample_submission")
 sys.path.insert(0, CG_HOME)
 sys.path.insert(0, os.path.join(REPO, "tools"))
+from cg.game import battle_finish, battle_select, battle_start  # noqa: E402
 from league import load_agent  # noqa: E402
-from cg.game import battle_start, battle_select, battle_finish  # noqa: E402
+
 
 NAMES = {}
 for r in csv.DictReader(open(os.path.join(REPO, "data", "EN_Card_Data.csv"))):
     NAMES.setdefault(int(r["Card ID"]), r["Card Name"])
 
-POKE = {1031, 1030, 666, 678, 677, 674, 673, 675, 676, 721, 722, 723,
-        646, 647, 648, 860, 104, 112, 169, 190}
+POKE = {
+    1031,
+    1030,
+    666,
+    678,
+    677,
+    674,
+    673,
+    675,
+    676,
+    721,
+    722,
+    723,
+    646,
+    647,
+    648,
+    860,
+    104,
+    112,
+    169,
+    190,
+}
 
 
 def nm(cid):
@@ -31,6 +54,7 @@ def nm(cid):
 def main():
     a_path, b_path, n = sys.argv[1], sys.argv[2], int(sys.argv[3])
     import random
+
     random.seed(int(sys.argv[4]) if len(sys.argv) > 4 else 1000)
     a = load_agent(a_path)
     b = load_agent(b_path)
@@ -42,8 +66,9 @@ def main():
         agents = [None, None]
         agents[a_index] = a.agent
         agents[1 - a_index] = b.agent
-        obs, start = battle_start(a.DECK if a_index == 0 else b.DECK,
-                                  a.DECK if a_index == 1 else b.DECK)
+        obs, start = battle_start(
+            a.DECK if a_index == 0 else b.DECK, a.DECK if a_index == 1 else b.DECK
+        )
         logs = []
         while obs["current"]["result"] < 0:
             idx = obs["current"]["yourIndex"]
@@ -56,7 +81,7 @@ def main():
         r = obs["current"]["result"]
         if r == 2:
             continue
-        won = (r == a_index)
+        won = r == a_index
         st = stats[won]
         st["games"] += 1
         turn = 0
@@ -65,7 +90,7 @@ def main():
         for lg in logs:
             t = lg.get("type")
             p = lg.get("playerIndex")
-            mine = (p == a_index)
+            mine = p == a_index
             side = "my" if mine else "op"
             if t == 2:
                 turn += 1
@@ -100,7 +125,9 @@ def main():
                 if ta == 3 and fa in (4, 5) and cid in POKE:
                     st[f"{side}_lost_{nm(cid)}({'A' if fa == 4 else 'B'})"] += 1
             elif t == 23:
-                st[f"reason_{lg.get('reason')}_{'me' if lg.get('result') == a_index else 'op'}"] += 1
+                st[
+                    f"reason_{lg.get('reason')}_{'me' if lg.get('result') == a_index else 'op'}"
+                ] += 1
         st["my_prizes"] += prizes[0]
         st["op_prizes"] += prizes[1]
         if my_mega_turn is None:
@@ -113,12 +140,14 @@ def main():
     for won in (False, True):
         st = stats[won]
         tc = turn_counts[won]
-        print(f"\n===== A {'WON' if won else 'LOST'} ({st['games']} games, "
-              f"avg turns {sum(tc)/max(len(tc),1):.1f}) =====")
+        print(
+            f"\n===== A {'WON' if won else 'LOST'} ({st['games']} games, "
+            f"avg turns {sum(tc) / max(len(tc), 1):.1f}) ====="
+        )
         for k, v in sorted(st.items(), key=lambda kv: -kv[1]):
             if k == "games":
                 continue
-            print(f"  {k}: {v}  ({v/max(st['games'],1):.2f}/game)")
+            print(f"  {k}: {v}  ({v / max(st['games'], 1):.2f}/game)")
 
 
 if __name__ == "__main__":

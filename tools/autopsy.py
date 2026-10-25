@@ -2,10 +2,12 @@
 
 Usage: python tools/autopsy.py REPLAY.json [--us TEAMNAME]
 """
+
 import csv
 import json
 import os
 import sys
+
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 names = {}
@@ -32,7 +34,7 @@ def main():
     logs = []
     last_step_id = -1
     for step in d["steps"]:
-        obs = (step[perspective].get("observation") or {})
+        obs = step[perspective].get("observation") or {}
         sid = obs.get("step", -1)
         if sid != last_step_id:
             logs.extend(obs.get("logs") or [])
@@ -66,8 +68,10 @@ def main():
                 prizes[p] += 1
                 print(f"  P{p} takes prize #{prizes[p]} ({nm(lg.get('cardId'))})")
         elif t == 23:
-            print(f"\nRESULT: winner=P{lg.get('result')} reason={lg.get('reason')} "
-                  f"(1=prizes,2=deckout,3=no-active,4=effect)")
+            print(
+                f"\nRESULT: winner=P{lg.get('result')} reason={lg.get('reason')} "
+                f"(1=prizes,2=deckout,3=no-active,4=effect)"
+            )
     print(f"\nprizes taken: P0={prizes[0]} P1={prizes[1]}")
 
 

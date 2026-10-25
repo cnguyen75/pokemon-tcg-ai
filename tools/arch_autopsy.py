@@ -8,11 +8,13 @@ Usage:
   uv run --python 3.13 python tools/arch_autopsy.py FLAGSHIP_CARD_ID [W|L]
   e.g. Archaludon ex = 190
 """
+
 import csv
 import glob
 import json
 import os
 import sys
+
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MY_TEAM = "Colin19"
@@ -38,8 +40,7 @@ def mon(m):
 def main():
     flagship = int(sys.argv[1])
     want = sys.argv[2] if len(sys.argv) > 2 else "L"
-    for f in sorted(glob.glob(os.path.join(ROOT, "episodes", "mine",
-                                           "episode-*-replay.json"))):
+    for f in sorted(glob.glob(os.path.join(ROOT, "episodes", "mine", "episode-*-replay.json"))):
         try:
             d = json.load(open(f))
             tn = d["info"]["TeamNames"]
@@ -70,12 +71,14 @@ def main():
             mya = (me.get("active") or [None])[0]
             opa = (op.get("active") or [None])[0]
             bench = ",".join(
-                f"{nm(b['id'])}({len(b.get('energies') or [])}e)"
-                for b in (me.get("bench") or []))
-            print(f"t{turn:2d} prz {me['prize']}-{op['prize']} | "
-                  f"me: {mon(mya)} | op: {mon(opa)} | "
-                  f"bench: {bench} | hand {me['handCount']} "
-                  f"deck {me['deckCount']}")
+                f"{nm(b['id'])}({len(b.get('energies') or [])}e)" for b in (me.get("bench") or [])
+            )
+            print(
+                f"t{turn:2d} prz {me['prize']}-{op['prize']} | "
+                f"me: {mon(mya)} | op: {mon(opa)} | "
+                f"bench: {bench} | hand {me['handCount']} "
+                f"deck {me['deckCount']}"
+            )
 
 
 if __name__ == "__main__":

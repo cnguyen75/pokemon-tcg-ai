@@ -10,8 +10,10 @@ dict/dataclass-agnostic `_g` accessors) so agent_az has NO import dependency on
 train/ at inference time. Kept byte-for-byte equivalent to extract_policy so the
 mined policy.npz option rows and the live inference rows are the same distribution.
 """
+
 import os
 import sys
+
 
 _REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # agent2 ships value_features.py; add it to the path (inference copies it locally)
@@ -19,8 +21,9 @@ for _p in (os.path.join(_REPO, "agent2"), os.path.dirname(os.path.abspath(__file
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
+from cg.api import AreaType, OptionType  # noqa: E402
 import value_features as vf  # noqa: E402
-from cg.api import OptionType, AreaType  # noqa: E402
+
 
 N_OPT_TYPES = 17
 D_OPT = 38
@@ -92,9 +95,16 @@ def option_features(o, cur, me, CARD, ATK):
     area = _g(o, "area")
     index = _g(o, "index")
     pidx = _g(o, "playerIndex")
-    if t in (OptionType.PLAY, OptionType.ATTACH, OptionType.EVOLVE,
-             OptionType.ABILITY, OptionType.DISCARD, OptionType.CARD,
-             OptionType.TOOL_CARD, OptionType.ENERGY_CARD):
+    if t in (
+        OptionType.PLAY,
+        OptionType.ATTACH,
+        OptionType.EVOLVE,
+        OptionType.ABILITY,
+        OptionType.DISCARD,
+        OptionType.CARD,
+        OptionType.TOOL_CARD,
+        OptionType.ENERGY_CARD,
+    ):
         card = _card_at(players, me, area, index, pidx, CARD)
         cid = _g(card, "id", 0)
     f += _card_static(cid, CARD)
@@ -111,8 +121,9 @@ def option_features(o, cur, me, CARD, ATK):
             atk_feats[1] = min(len(a.energies), 5) / 5.0
             atk_feats[2] = 1.0 if (op_hp and dmg >= op_hp) else 0.0
             n_prz = len(_g(op, "prize") or [])
-            atk_feats[3] = 1.0 if (op_hp and dmg >= op_hp
-                                   and n_prz <= vf._pyield(CARD.get(op_id))) else 0.0
+            atk_feats[3] = (
+                1.0 if (op_hp and dmg >= op_hp and n_prz <= vf._pyield(CARD.get(op_id))) else 0.0
+            )
     f += atk_feats
 
     ipa = _g(o, "inPlayArea")

@@ -12,14 +12,17 @@ stdin heredoc __main__ -> Pool hangs forever (learned 7/21).
 
 Usage: uv run --python 3.13 --with numpy,torch python tools/screen_lucknobs.py VARIANT [OPP]
 """
+
 import math
+from multiprocessing import Pool
 import os
 import sys
 import time
-from multiprocessing import Pool
+
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from league import play_games, wilson  # noqa: E402
+
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 GAMES = 200
@@ -41,9 +44,12 @@ def main():
     w = sum(r == 1 for r in res)
     l = sum(r == -1 for r in res)
     _, lo, hi = wilson(w, w + l)
-    print(f"{variant} vs {opp}: {w}-{l} ({100 * w / max(w + l, 1):.1f}%) "
-          f"CI[{100 * lo:.1f},{100 * hi:.1f}] {len(res)}g "
-          f"{time.time() - t0:.0f}s", flush=True)
+    print(
+        f"{variant} vs {opp}: {w}-{l} ({100 * w / max(w + l, 1):.1f}%) "
+        f"CI[{100 * lo:.1f},{100 * hi:.1f}] {len(res)}g "
+        f"{time.time() - t0:.0f}s",
+        flush=True,
+    )
 
 
 if __name__ == "__main__":

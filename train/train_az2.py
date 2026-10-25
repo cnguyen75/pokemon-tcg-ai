@@ -29,22 +29,30 @@ State/option normalization stats are taken from the SAME sources as train_az.py
 (value train set for state, BC train options for option) so the exported net is
 inference-compatible with the existing agent_az featurization.
 """
+
 import argparse
 import glob
 import os
 import sys
-import time
-from collections import defaultdict
 
 import numpy as np
+
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(REPO, "agent_az"))
 sys.path.insert(0, os.path.join(REPO, "agent2"))
 
-OPT_TYPE_NAMES = {7: "PLAY", 8: "ATTACH", 9: "EVOLVE", 10: "ABILITY",
-                  11: "DISCARD", 12: "RETREAT", 13: "ATTACK", 14: "END",
-                  15: "SKILL"}
+OPT_TYPE_NAMES = {
+    7: "PLAY",
+    8: "ATTACH",
+    9: "EVOLVE",
+    10: "ABILITY",
+    11: "DISCARD",
+    12: "RETREAT",
+    13: "ATTACK",
+    14: "END",
+    15: "SKILL",
+}
 
 
 def by_episode_split(ep, frac=0.15, seed=0):
@@ -62,21 +70,24 @@ def main():
     ap.add_argument("--epochs", type=int, default=40)
     ap.add_argument("--dmodel", type=int, default=256)
     ap.add_argument("--nblocks", type=int, default=3)
-    ap.add_argument("--warm-start", default="",
-                    help="checkpoint to warm-start weights from (same arch)")
+    ap.add_argument(
+        "--warm-start", default="", help="checkpoint to warm-start weights from (same arch)"
+    )
     ap.add_argument("--lr", type=float, default=1e-3)
     ap.add_argument("--batch", type=int, default=1024)
-    ap.add_argument("--sp-glob", default="az_selfplay_r1_*",
-                    help="glob (in train/data) for self-play npz files")
-    ap.add_argument("--sp-weight", type=float, default=1.5,
-                    help="loss weight on self-play policy+value vs BC")
+    ap.add_argument(
+        "--sp-glob", default="az_selfplay_r1_*", help="glob (in train/data) for self-play npz files"
+    )
+    ap.add_argument(
+        "--sp-weight", type=float, default=1.5, help="loss weight on self-play policy+value vs BC"
+    )
     ap.add_argument("--out", default=os.path.join(REPO, "agent_az", "az_net.pt"))
     args = ap.parse_args()
 
+    from az_net import D_OPT, D_STATE, AZNet, param_count
+    from sklearn.metrics import roc_auc_score
     import torch
     import torch.nn.functional as F
-    from az_net import AZNet, param_count, D_STATE, D_OPT
-    from sklearn.metrics import roc_auc_score
 
     dev = "cuda" if torch.cuda.is_available() else "cpu"
     torch.manual_seed(0)
@@ -85,7 +96,13 @@ def main():
     # ---------------- BC POLICY data (policy.npz) ----------------
     dp = np.load(os.path.join(DATA, "policy.npz"))
     X_opt, X_state, offs, chosen, ep_p, dtype = (
-        dp["X_opt"], dp["X_state"], dp["offs"], dp["chosen"], dp["ep"], dp["dtype_"])
+        dp["X_opt"],
+        dp["X_state"],
+        dp["offs"],
+        dp["chosen"],
+        dp["ep"],
+        dp["dtype_"],
+    )
     n_dec = len(chosen)
     Dopt, Dstate = X_opt.shape[1], X_state.shape[1]
     assert Dopt == D_OPT and Dstate == D_STATE, (Dopt, Dstate)
@@ -94,7 +111,7 @@ def main():
 
     tr_opt_mask = np.zeros(len(X_opt), dtype=bool)
     for di in tr_dec:
-        tr_opt_mask[offs[di]:offs[di + 1]] = True
+        tr_opt_mask[offs[di] : offs[di + 1]] = True
     o_mu, o_sd = X_opt[tr_opt_mask].mean(0), X_opt[tr_opt_mask].std(0) + 1e-6
     Xopt_n = ((X_opt - o_mu) / o_sd).astype(np.float32)
 
@@ -109,12 +126,15 @@ def main():
         _X, _y, _e, _h = [Xv], [yv], [ep_v], [hcv]
         for f in _vg:
             d2 = np.load(f)
-            _X.append(d2["X"]); _y.append(d2["y"])
-            _e.append(d2["ep"]); _h.append(d2["hc"])
-        Xv = np.concatenate(_X); yv = np.concatenate(_y)
-        ep_v = np.concatenate(_e); hcv = np.concatenate(_h)
-        print(f"[value-aug] {len(_vg)} azval files -> {len(yv)} value rows",
-              flush=True)
+            _X.append(d2["X"])
+            _y.append(d2["y"])
+            _e.append(d2["ep"])
+            _h.append(d2["hc"])
+        Xv = np.concatenate(_X)
+        yv = np.concatenate(_y)
+        ep_v = np.concatenate(_e)
+        hcv = np.concatenate(_h)
+        print(f"[value-aug] {len(_vg)} azval files -> {len(yv)} value rows", flush=True)
     hc_tanh = np.tanh(hcv / 25_000.0).astype(np.float32)
     Xv_full = np.concatenate([Xv, hc_tanh[:, None]], axis=1).astype(np.float32)
     assert Xv_full.shape[1] == D_STATE
@@ -127,8 +147,9 @@ def main():
     sp_files = sorted(glob.glob(os.path.join(DATA, args.sp_glob + ".npz")))
     if not sp_files:
         sp_files = sorted(glob.glob(os.path.join(DATA, args.sp_glob)))
-    print(f"[selfplay] {len(sp_files)} files: "
-          f"{[os.path.basename(f) for f in sp_files]}", flush=True)
+    print(
+        f"[selfplay] {len(sp_files)} files: {[os.path.basename(f) for f in sp_files]}", flush=True
+    )
     sp_Xs, sp_Xo, sp_offs, sp_pi, sp_y, sp_ep = [], [], [0], [], [], []
     for f in sp_files:
         d = np.load(f)
@@ -149,9 +170,12 @@ def main():
     sp_y = np.concatenate(sp_y, 0).astype(np.float32) if sp_y else np.zeros(0, np.float32)
     sp_ep = np.concatenate(sp_ep, 0) if sp_ep else np.zeros(0, np.int64)
     n_sp = len(sp_ep)
-    print(f"[selfplay] {n_sp} MAIN decisions, {sp_Xo.shape[0]} option rows, "
-          f"value y-mean {sp_y.mean() if n_sp else 0:.3f}, "
-          f"{len(np.unique(sp_ep))} games", flush=True)
+    print(
+        f"[selfplay] {n_sp} MAIN decisions, {sp_Xo.shape[0]} option rows, "
+        f"value y-mean {sp_y.mean() if n_sp else 0:.3f}, "
+        f"{len(np.unique(sp_ep))} games",
+        flush=True,
+    )
 
     # standardize self-play feats with the SAME stats as inference/BC
     sp_Xs_n = ((sp_Xs - s_mu) / s_sd).astype(np.float32)
@@ -159,8 +183,9 @@ def main():
     sp_sizes = np.diff(sp_offs)
     M = int(max(sizes.max(), sp_sizes.max() if n_sp else 0))
 
-    sp_tr, sp_te = (by_episode_split(sp_ep, frac=0.12, seed=0)
-                    if n_sp else (np.zeros(0, int), np.zeros(0, int)))
+    sp_tr, sp_te = (
+        by_episode_split(sp_ep, frac=0.12, seed=0) if n_sp else (np.zeros(0, int), np.zeros(0, int))
+    )
 
     # ------- dense padded builders -------
     def build_bc(dec_ids):
@@ -176,8 +201,7 @@ def main():
             Xs[r] = Xstate_n[di]
             mask[r, :m] = 1.0
             ch[r] = chosen[di]
-        return (torch.tensor(Xs), torch.tensor(Xo), torch.tensor(mask),
-                torch.tensor(ch))
+        return (torch.tensor(Xs), torch.tensor(Xo), torch.tensor(mask), torch.tensor(ch))
 
     def build_sp(dec_ids):
         N = len(dec_ids)
@@ -194,14 +218,21 @@ def main():
             mask[r, :m] = 1.0
             pit[r, :m] = sp_pi[a:b]
             yv_[r] = sp_y[di]
-        return (torch.tensor(Xs), torch.tensor(Xo), torch.tensor(mask),
-                torch.tensor(pit), torch.tensor(yv_))
+        return (
+            torch.tensor(Xs),
+            torch.tensor(Xo),
+            torch.tensor(mask),
+            torch.tensor(pit),
+            torch.tensor(yv_),
+        )
 
     Xs_tr, Xo_tr, Mk_tr, Ch_tr = build_bc(tr_dec)
     Xs_te, Xo_te, Mk_te, Ch_te = build_bc(te_dec)
     Xv_n = ((Xv_full - s_mu) / s_sd).astype(np.float32)
-    Xv_tr = torch.tensor(Xv_n[trv]); yv_tr = torch.tensor(yv[trv].astype(np.float32))
-    Xv_te = torch.tensor(Xv_n[tev]); yv_te = yv[tev].astype(np.float32)
+    Xv_tr = torch.tensor(Xv_n[trv])
+    yv_tr = torch.tensor(yv[trv].astype(np.float32))
+    Xv_te = torch.tensor(Xv_n[tev])
+    yv_te = yv[tev].astype(np.float32)
 
     if n_sp:
         sXs_tr, sXo_tr, sMk_tr, sPi_tr, sY_tr = build_sp(sp_tr)
@@ -215,15 +246,21 @@ def main():
         for t in (sXs_tr, sXo_tr, sMk_tr, sPi_tr, sY_tr):
             t.data = t.data.to(dev)
         sXs_te, sXo_te, sMk_te = sXs_te.to(dev), sXo_te.to(dev), sMk_te.to(dev)
-        sPi_te = sPi_te.to(dev); sY_te_np = sY_te.cpu().numpy()
+        sPi_te = sPi_te.to(dev)
+        sY_te_np = sY_te.cpu().numpy()
 
-    print(f"[policy-bc] {len(tr_dec)} tr {len(te_dec)} te | "
-          f"[value-bc] {len(trv)} tr {len(tev)} te | "
-          f"[selfplay] {len(sp_tr)} tr {len(sp_te)} te | max opts {M}", flush=True)
+    print(
+        f"[policy-bc] {len(tr_dec)} tr {len(te_dec)} te | "
+        f"[value-bc] {len(trv)} tr {len(tev)} te | "
+        f"[selfplay] {len(sp_tr)} tr {len(sp_te)} te | max opts {M}",
+        flush=True,
+    )
 
     net = AZNet(D_STATE, D_OPT, d_model=args.dmodel, n_blocks=args.nblocks).to(dev)
-    print(f"[net] d_model {args.dmodel} n_blocks {args.nblocks}, "
-          f"params {param_count(net):,}", flush=True)
+    print(
+        f"[net] d_model {args.dmodel} n_blocks {args.nblocks}, params {param_count(net):,}",
+        flush=True,
+    )
     if args.warm_start and os.path.exists(args.warm_start):
         wck = torch.load(args.warm_start, map_location=dev, weights_only=False)
         net.load_state_dict(wck["state_dict"])
@@ -283,7 +320,8 @@ def main():
 
     for epoch in range(args.epochs):
         net.train()
-        rng.shuffle(idx_p); rng.shuffle(idx_v)
+        rng.shuffle(idx_p)
+        rng.shuffle(idx_v)
         if Nsp:
             rng.shuffle(idx_sp)
         pol_loss = val_loss = sp_loss = 0.0
@@ -291,9 +329,9 @@ def main():
         n_vbatch = max(1, Nv // B)
         n_spbatch = max(1, Nsp // B) if Nsp else 1
         for bi, k in enumerate(range(0, Np, B)):
-            bp = idx_p[k:k + B]
+            bp = idx_p[k : k + B]
             vk = bi % n_vbatch
-            bv = idx_v[vk * B:vk * B + B]
+            bv = idx_v[vk * B : vk * B + B]
             opt.zero_grad()
             # BC policy (one-hot CE)
             h = net.encode(Xs_tr[bp])
@@ -308,34 +346,38 @@ def main():
             lsp = torch.tensor(0.0, device=dev)
             if Nsp:
                 sk = bi % n_spbatch
-                bs = idx_sp[sk * B:sk * B + B]
+                bs = idx_sp[sk * B : sk * B + B]
                 if len(bs) == 0:
                     bs = idx_sp[:B]
                 hs = net.encode(sXs_tr[bs])
                 slog = net.policy_logits_from_h(hs, sXo_tr[bs], sMk_tr[bs])
                 slogp = torch.log_softmax(slog, dim=1)
                 tgt = sPi_tr[bs]
-                sp_pol = -(tgt * slogp).sum(1).mean()          # soft CE
+                sp_pol = -(tgt * slogp).sum(1).mean()  # soft CE
                 sv = net.value_from_h(hs)
                 sp_val = F.binary_cross_entropy_with_logits(sv, sY_tr[bs])
                 lsp = sp_pol + LAMBDA_V * sp_val
                 loss = loss + SPW * lsp
             loss.backward()
             opt.step()
-            pol_loss += lp.item(); val_loss += lv.item()
-            sp_loss += float(lsp); nb += 1
+            pol_loss += lp.item()
+            val_loss += lv.item()
+            sp_loss += float(lsp)
+            nb += 1
         t1, t3 = eval_policy()
         auc, vacc = eval_value()
         kl, agree, spauc = eval_sp()
         # model-selection score: prioritize self-play fit if present, else BC top1
         score = (agree if n_sp else t1) + 0.5 * (spauc if n_sp else auc)
-        print(f"ep {epoch+1:2d} bc_pol {pol_loss/nb:.3f} bc_val {val_loss/nb:.3f} "
-              f"sp {sp_loss/nb:.3f} | BC t1 {t1:.3f} t3 {t3:.3f} vAUC {auc:.3f} "
-              f"| SP KL {kl:.3f} agree {agree:.3f} vAUC {spauc:.3f}", flush=True)
+        print(
+            f"ep {epoch + 1:2d} bc_pol {pol_loss / nb:.3f} bc_val {val_loss / nb:.3f} "
+            f"sp {sp_loss / nb:.3f} | BC t1 {t1:.3f} t3 {t3:.3f} vAUC {auc:.3f} "
+            f"| SP KL {kl:.3f} agree {agree:.3f} vAUC {spauc:.3f}",
+            flush=True,
+        )
         if score > best_score:
             best_score = score
-            best_state = {k2: v.detach().cpu().clone()
-                          for k2, v in net.state_dict().items()}
+            best_state = {k2: v.detach().cpu().clone() for k2, v in net.state_dict().items()}
 
     if best_state is not None:
         net.load_state_dict(best_state)
@@ -352,15 +394,25 @@ def main():
     print(f"  BC   VALUE  AUC   {auc:.4f}  acc {vacc:.3f}")
     print(f"  SP   policy agree {agree:.4f}  KL {kl:.4f}  value AUC {spauc:.4f}")
 
-    torch.save({
-        "state_dict": net.state_dict(),
-        "d_model": args.dmodel, "n_blocks": args.nblocks,
-        "d_state": D_STATE, "d_opt": D_OPT,
-        "s_mu": s_mu.astype(np.float32), "s_sd": s_sd.astype(np.float32),
-        "o_mu": o_mu.astype(np.float32), "o_sd": o_sd.astype(np.float32),
-        "policy_top1": t1, "policy_top3": t3, "value_auc": auc,
-        "sp_agree": agree, "sp_value_auc": spauc,
-    }, args.out)
+    torch.save(
+        {
+            "state_dict": net.state_dict(),
+            "d_model": args.dmodel,
+            "n_blocks": args.nblocks,
+            "d_state": D_STATE,
+            "d_opt": D_OPT,
+            "s_mu": s_mu.astype(np.float32),
+            "s_sd": s_sd.astype(np.float32),
+            "o_mu": o_mu.astype(np.float32),
+            "o_sd": o_sd.astype(np.float32),
+            "policy_top1": t1,
+            "policy_top3": t3,
+            "value_auc": auc,
+            "sp_agree": agree,
+            "sp_value_auc": spauc,
+        },
+        args.out,
+    )
     print(f"\nsaved -> {args.out}")
 
 
