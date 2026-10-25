@@ -160,7 +160,6 @@ class AZNet(nn.Module):
         p = self.policy_logits_from_h(h, x_opt, mask)
         return p, v
 
-    # ---- single-decision inference helpers (used by MCTS) ----
     @torch.no_grad()
     def eval_leaf(
         self, x_state_1: torch.Tensor, x_opt_1: torch.Tensor

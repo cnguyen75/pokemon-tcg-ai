@@ -93,7 +93,6 @@ def main() -> None:
                 flush=True,
             )
 
-    # final report
     print(f"\n=== {args.tag} FINAL ===", flush=True)
     wsum, wtot = 0.0, 0.0
     for opp, o in state["opps"].items():

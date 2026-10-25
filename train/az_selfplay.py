@@ -117,7 +117,6 @@ def play_worker(
     rng = random.Random(seed)
     np_rng = np.random.RandomState(seed & 0x7FFFFFFF)
 
-    # az internals we reuse
     to_obs = to_observation_class
     is_main = az._is_main_pick
     scripted = az._scripted_choice

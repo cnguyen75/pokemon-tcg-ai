@@ -203,7 +203,6 @@ def main() -> None:
     model.eval()
     print(f"selected epoch {best_ep} (val auc {best_val:.4f})")
 
-    # ---- final report vs baselines
     pe, ps = predict(Xho_e), predict(Xho_s)
     print("\n=== held-out results ===")
     for name, yh, ph, hh in (("episodes", yho_e, pe, hho_e), ("selfplay", yho_s, ps, hho_s)):
@@ -213,7 +212,6 @@ def main() -> None:
             f"always-0.5 ll {logloss(yh, np.full(len(yh), 0.5)):.4f}"
         )
 
-    # ---- paired bootstrap (by episode) of net-vs-handcrafted AUC delta:
     # single-subset AUCs swing +-0.04 by episode draw, so gate on the
     # paired delta, not the raw numbers.
     ho_eps = epe[ho_e]
@@ -235,7 +233,6 @@ def main() -> None:
         f"{np.percentile(deltas, 97.5):+.4f}]  P(net>hc) {(deltas > 0).mean():.2f}"
     )
 
-    # ---- per-episode AUC (paired): search compares futures of the SAME
     # game, so within-game discrimination is the metric that matters most.
     def per_episode(scores: np.ndarray) -> np.ndarray:
         vals = []
@@ -276,7 +273,6 @@ def main() -> None:
         f"net {pa_net_s.mean():.4f} vs handcrafted {pa_hc_s.mean():.4f}"
     )
 
-    # ---- shipped (old) net evaluated on the SAME new holdout
     def npz_predict(path: str, Xraw: np.ndarray) -> np.ndarray:
         z = np.load(path)
         want = z["mean"].shape[0]
@@ -309,7 +305,6 @@ def main() -> None:
             f"new wins {(dd_no > 0).mean() * 100:.0f}% of episodes)"
         )
 
-    # ---- export (generic layer count: W1..Wn)
     lin = [m for m in model if isinstance(m, nn.Linear)]
     out_d = {"mean": mean.astype(np.float32), "std": std.astype(np.float32)}
     for i, m in enumerate(lin, 1):
@@ -318,7 +313,6 @@ def main() -> None:
     np.savez(OUT, **out_d)
     print(f"exported {OUT} ({len(lin)} linear layers)")
 
-    # ---- permutation importance by feature group (held-out episodes)
     groups = {
         "prizes": [i for i, f in enumerate(FEATURE_NAMES) if "prize" in f or "win_if_ko" in f],
         "threat_dmg": [

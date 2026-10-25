@@ -141,7 +141,6 @@ def report(
             f"{name:18s} overall auc {auc(yf, s):.4f}  "
             f"per-episode auc {vals.mean():.4f} (n={len(vals)})"
         )
-    # paired deltas vs shipped
     for name in ("cand_A_64x32", "cand_B_128x64x32", "cand_C_wep0.7", "cand_D_wep0.3"):
         common = sorted(set(per_ep[name]) & set(per_ep["shipped_v5"]))
         d = np.asarray([per_ep[name][e] - per_ep["shipped_v5"][e] for e in common])
@@ -155,7 +154,6 @@ def report(
 def main() -> None:
     rng = np.random.default_rng(SEED)
 
-    # ---- episodes
     d = np.load(os.path.join(DATA, "episodes.npz"))
     Xe = np.hstack([d["X"], np.tanh(d["hc"] / 25_000.0)[:, None]]).astype(np.float32)
     ye, epe, hce = d["y"], d["ep"].astype(np.int64), d["hc"]
@@ -183,7 +181,6 @@ def main() -> None:
         fresh_row,
     )
 
-    # ---- selfplay (reproduce the second rng call in training order)
     sp_files = sorted(glob.glob(os.path.join(DATA, "selfplay_*.npz")))
     Xs_, ys_, eps_, hcs_ = [], [], [], []
     seed3 = set()

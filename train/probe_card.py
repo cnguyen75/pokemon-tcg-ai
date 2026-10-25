@@ -100,7 +100,6 @@ def main() -> None:
         pe = per_ep(yho, p, epho)
         print(f"  {name:16s} pooled {auc(yho, p):.4f}  per-ep {pe.mean():.4f}")
 
-    # ---- leakage check: newest episodes the shipped net could not have seen
     print("\n=== shipped-net leakage check ===")
     # map episode index -> source dir (re-derive file ordering from extractor)
     DIRS = glob.glob(os.path.join(REPO, "episodes", "daily", "*")) + [

@@ -113,7 +113,6 @@ def ladder_svg(res: dict[str, Any]) -> str:
         ("2026-07-29", "Jul 29"),
     ):
         p.append(text(x(d), B + 22, s, 12, SECONDARY, anchor="middle"))
-    # team score line
     p.append(
         f'<line x1="{L}" x2="{R}" y1="{y(lb["score"]):.1f}" y2="{y(lb["score"]):.1f}" '
         f'stroke="{ORANGE}" stroke-width="2"/>'

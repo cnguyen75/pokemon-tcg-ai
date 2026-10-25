@@ -62,7 +62,6 @@ def B(name: str) -> str:
 
 
 # opponent -> (agent dir, meta weight).  Weights sum to 1.0.
-#
 # 2026-07-12/13: panel re-weighted to OUR OWN band's meta (775-810), measured
 # from episodes/v71games (106g) + v7games (62g) = the 168 ladder games v7/v7.1
 # actually played, classified by flagship card. Band shares | our ladder WR:
@@ -72,7 +71,6 @@ def B(name: str) -> str:
 #   cynthia_garchomp 3.0%|20%, trevenant/bellibolt/abomasnow/kangas <2.5% ea.
 # Weights below = band shares renormalized over the archetypes we can
 # faithfully measure (0.625 of the field).
-#
 # FIDELITY AUDIT 2026-07-12 (200g agent2(v7.1) vs pilot | our ladder WR):
 #   lucario1084    54.4% | 48.3%  VERIFIED (+6pp)
 #   fw_grimm       60.8% | 66.7%  VERIFIED (-6pp)

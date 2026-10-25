@@ -71,7 +71,6 @@ def opt_type(i: int) -> int:
 
 
 n = len(chosen)
-# overall counters
 sc_t1 = pol_t1 = 0
 cov_script = cov_union = 0
 per = defaultdict(lambda: [0, 0, 0, 0, 0])  # n, sc_t1, pol_t1, cov_s, cov_u

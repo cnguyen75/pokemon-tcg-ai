@@ -61,7 +61,6 @@ def main() -> None:
         Xfull[a:b, D_opt:] = X_state[di]
         dec_of_opt[a:b] = di
 
-    # by-episode split
     rng = np.random.RandomState(0)
     uep = np.unique(ep)
     rng.shuffle(uep)
@@ -176,7 +175,6 @@ def main() -> None:
     if best_state is not None:
         net.load_state_dict(best_state)
 
-    # ---- decisive comparison on held-out ----
     net_t1, net_t3 = eval_split(Xte_t, Mte_t, Cte)
     net.eval()
     with torch.no_grad():
@@ -226,7 +224,6 @@ def main() -> None:
             f"{100 * (nt1 - st1) / nn_:+7.1f} {rr / nn_:6.3f}"
         )
 
-    # ---- inference cost ----
     med = int(np.median(sizes[te_dec]))
     xb = Xte_t[:1, :med, :]
     for _ in range(50):

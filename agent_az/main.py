@@ -41,7 +41,6 @@ if AGENT_DIR not in sys.path:
     sys.path.insert(0, AGENT_DIR)
 REPO = os.path.dirname(AGENT_DIR)
 
-# ---- scripted policy + determinization ----
 # For a SELF-CONTAINED Kaggle submission, agent_az bundles agent2's scripted
 # Policy (choose(), begin_world, DECK) + its helpers (deck_configs.py,
 # value_features.py, value_net.py/.npz) under agent_az/scripted/. We load that
@@ -89,7 +88,6 @@ ATK = {a.attackId: a for a in all_attack()}
 
 import features as feats  # noqa: E402
 
-# ---- network ----
 import numpy as np  # noqa: E402
 
 
@@ -113,7 +111,6 @@ try:
 except Exception as _e:  # pragma: no cover
     NET_OK = False
 
-# ---- search hyperparameters (env-overridable) ----
 MOVE_DEADLINE = float(os.environ.get("CG_AZ_DEADLINE", "2.2"))  # hard per-move (s)
 SEARCH_BUDGET = float(os.environ.get("CG_AZ_BUDGET", "1.6"))  # search time/move (s)
 MAX_SIMS = int(os.environ.get("CG_AZ_SIMS", "240"))
@@ -152,9 +149,6 @@ def _net_eval(cur: Any, me: int, options: list[Any]) -> tuple[np.ndarray, float]
     xo = (xo - _NORM["o_mu"]) / _NORM["o_sd"]
     probs, v = NET.eval_leaf(torch.from_numpy(xs), torch.from_numpy(xo))
     return probs.numpy(), float(v)
-
-
-# ------------------------------------------------------------- MCTS
 
 
 class Node:
@@ -311,9 +305,6 @@ def mcts_choice(obs: Any, me: int) -> list[int]:
         # no sim completed: fall back to raw policy prior
         return [int(np.argmax(prior))]
     return [int(np.argmax(root.N))]
-
-
-# ------------------------------------------------------------- entry
 
 
 _G = {"move_t0": 0.0, "turn": -99}

@@ -112,9 +112,6 @@ def zone_ids(cur: Any, me: int, CARD: dict[int, Any]) -> dict[str, list[int]]:
     }
 
 
-# ---------------------------------------------------------------------------
-# Vocabulary
-# ---------------------------------------------------------------------------
 def build_vocab(dirs: list[str], CARD: dict[int, Any], top_n: int = 300) -> list[int]:
     """Count card-id frequency across all replays in `dirs`, keep the top_n."""
     from collections import Counter

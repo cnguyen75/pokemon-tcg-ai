@@ -61,8 +61,6 @@ try:
 except Exception:
     pass
 
-# ------------------------------------------------------------ deck config
-
 
 def _load_configs() -> dict[str, dict[str, Any]]:
     ns = {}
@@ -79,9 +77,6 @@ if DECK_NAME not in DECK_CONFIGS:
 CFG = DECK_CONFIGS[DECK_NAME]
 DECK = list(CFG["deck"])
 # The deck actually submitted at step 0 comes from deck.csv when present.
-# (2026-07-20: DECK previously always came from the config constant — every
-# deck.csv-only variant silently played the config deck, both in local
-# leagues and on the ladder.)
 try:
     _dk = os.path.join(AGENT_DIR, "deck.csv")
     if os.path.isfile(_dk):
@@ -252,7 +247,6 @@ class Plan:
         self.retreat_fuel = 0  # energy card id to attach to ACTIVE so it can retreat
 
 
-# persistent per-game state
 _G = {
     "turn": -99,
     "plan": Plan(),
@@ -273,12 +267,10 @@ _G = {
 }
 IN_VERIFY = False
 
-# ---------------------------------------------------------- search budget
 MOVE_DEADLINE = 2.4  # hard per-move ceiling (s)
 SEARCH_BUDGET = float(os.environ.get("CG_A2_SEARCH_BUDGET", "1.9"))  # per-search (s)
 SEARCH_MAX_WORLDS = int(os.environ.get("CG_A2_SEARCH_WORLDS", "10"))
 SEARCH_MAX_CANDS = int(os.environ.get("CG_A2_SEARCH_CANDS", "5"))
-# ------------------------------------------------ within-turn beam search
 # When on, det_search optimizes our WHOLE turn's action sequence per candidate
 # first-move via a beam (width W, policy top-B expansion per node) instead of a
 # single-first-move + policy rollout. The best end-of-turn states then get the
@@ -301,7 +293,6 @@ DEBUG = bool(os.environ.get("CG_A2_DEBUG"))
 # decision classes disabled for search (comma list, e.g. "atk,promote")
 SEARCH_OFF = frozenset(x for x in os.environ.get("CG_A2_SEARCH_OFF", "").split(",") if x)
 
-# ---------------------------------------------- learned leaf value net
 # CG_A2_VALUE_NET=1 replaces the handcrafted leaf eval in det_search with a
 # small MLP win-prob net (value_net.npz), blended with a squashed handcrafted
 # score. Leaf scores move to the [0, 1000] win-prob scale, so the override
@@ -446,8 +437,6 @@ class Policy:
             except Exception:
                 pass
 
-    # ------------------------------------------------------- bookkeeping
-
     def _archetype(self) -> str:
         seen = set()
         for p in self.op_board:
@@ -536,8 +525,6 @@ class Policy:
 
     def my_damage_total(self) -> int:
         return sum((p.maxHp - p.hp) for p in self.my_board if p is not None)
-
-    # ------------------------------------------------------- attack planner
 
     def plan_attack(self, exclude: Collection[tuple[int, int, int]] = ()) -> Plan:
         plan = Plan()
@@ -720,8 +707,6 @@ class Policy:
                         plan.retreat_fuel = retreat_fuel if uses_fuel else 0
         return plan
 
-    # ------------------------------------------------------- need scoring
-
     def need_score(self, cid: int) -> float:
         """How much we want this card in hand right now."""
         d = CARD.get(cid)
@@ -795,8 +780,6 @@ class Policy:
             s += 60
         return s
 
-    # ------------------------------------------------------- MAIN scoring
-
     def sc_ability(self, o: Any) -> float:
         card = get_card(
             self.obs, o.area, o.index, o.playerIndex if o.playerIndex is not None else self.me
@@ -842,7 +825,6 @@ class Policy:
             if cur is not None and cur.id == cid and cur.playerIndex == self.me:
                 return -1
             return 8600
-        # items
         if cid == 1086:  # Poffin
             if len(self.my.bench or []) >= self.my.benchMax:
                 return -1
@@ -1103,7 +1085,6 @@ class Policy:
                 ):
                     return -1  # better holder still coming: hold
             return 7000 + v
-        # energy
         if cid == 17:  # Ignition: burn only to enable the planned attack
             td = CARD.get(target.id)
             if td is not None and td.basic:
@@ -1279,8 +1260,6 @@ class Policy:
         if dmg <= 0 and bonus <= 0:
             return 5
         return 200 + dmg * 0.5 + bonus
-
-    # ------------------------------------------------------- card contexts
 
     def sc_card(self, o: Any) -> float:
         card = get_card(
@@ -1462,8 +1441,6 @@ class Policy:
                 s += 300
         return s
 
-    # ------------------------------------------------------- other types
-
     def sc_attached(self, o: Any) -> float:
         """TOOL_CARD / ENERGY_CARD options (e.g. Crushing Hammer target)."""
         holder = get_card(self.obs, o.area, o.index, o.playerIndex)
@@ -1532,8 +1509,6 @@ class Policy:
                 return n - 1000
             return n
         return n
-
-    # ------------------------------------------------------- dispatch
 
     def score_option(self, o: Any) -> float:
         t = o.type
@@ -1673,8 +1648,6 @@ class Policy:
                 if d is not None and d.cardType != CardType.POKEMON:
                     _G["resolving"] = c.id
         return chosen
-
-    # ---------------------------------------------- pivotal candidate sets
 
     def _jit_attack_ready(self, o: Any) -> bool:
         """Would the evolved active be able to attack immediately?"""
@@ -1819,8 +1792,6 @@ class Policy:
             cand = order[:1]
         return [[i] for i in cand]
 
-    # ------------------------------------------------------- lethal verify
-
     def maybe_verify_lethal(self) -> None:
         global IN_VERIFY
         plan = _G["plan"]
@@ -1846,9 +1817,6 @@ class Policy:
         if not ok:
             _G["lethal_fail"].add(key)
             _G["plan"] = self.plan_attack(exclude=_G["lethal_fail"])
-
-
-# ------------------------------------------------------------ search world
 
 
 def sample_own_hidden(obs: Observation, me: int) -> tuple[list[int], list[int]]:
@@ -2012,9 +1980,6 @@ def verify_win(obs: Observation, me: int, worlds: int = 3, budget: float = 1.2) 
         except Exception:
             pass
     return tried == 0 or wins * 2 >= tried
-
-
-# ------------------------------------------------------- pivotal search
 
 
 def eval_world(cur: Any, me: int, base_my_pr: int, base_op_pr: int) -> float:
@@ -2334,9 +2299,6 @@ def run_search(pol: Policy, cands: list[int]) -> int | None:
         IN_VERIFY = False
         _G["plan"], _G["arch"] = saved_plan, saved_arch
         _G["peek_turn"] = saved_peek
-
-
-# ------------------------------------------------------------ entry point
 
 
 def _game_reset() -> None:

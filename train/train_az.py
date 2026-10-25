@@ -70,7 +70,6 @@ def main() -> None:
     dev = "cuda" if torch.cuda.is_available() else "cpu"
     torch.manual_seed(0)
 
-    # ---------------- POLICY data (policy.npz) ----------------
     dp = np.load(os.path.join(REPO, "train", "data", "policy.npz"))
     X_opt, X_state, offs, chosen, ep_p, dtype = (
         dp["X_opt"],
@@ -119,7 +118,6 @@ def main() -> None:
             ch[r] = chosen[di]
         return (torch.tensor(Xs), torch.tensor(Xo), torch.tensor(mask), torch.tensor(ch))
 
-    # ---------------- VALUE data (episodes.npz) ----------------
     dv = np.load(os.path.join(REPO, "train", "data", "episodes.npz"))
     Xv, yv, ep_v, hcv = dv["X"], dv["y"], dv["ep"], dv["hc"]
     # value net input = 100 base feats + hc_tanh (matches D_STATE=101)
@@ -149,7 +147,6 @@ def main() -> None:
         flush=True,
     )
 
-    # ---------------- model ----------------
     net = AZNet(D_STATE, D_OPT, d_model=args.dmodel, n_blocks=args.nblocks).to(dev)
     print(
         f"[net] d_model {args.dmodel} n_blocks {args.nblocks}, params {param_count(net):,}",
@@ -201,7 +198,6 @@ def main() -> None:
             vk = bi % n_vbatch
             bv = idx_v[vk * B : vk * B + B]
             opt.zero_grad()
-            # policy loss (shared torso)
             h = net.encode(Xs_tr[bp])
             logits = net.policy_logits_from_h(h, Xo_tr[bp], Mk_tr[bp])
             logp = torch.log_softmax(logits, dim=1)

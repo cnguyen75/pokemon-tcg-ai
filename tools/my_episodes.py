@@ -70,7 +70,6 @@ def main() -> None:
     errs = 0
     for i, e in enumerate(eps):
         eid = e["id"]
-        # our index & reward
         us = next((a for a in e["agents"] if a.get("submissionId") == args.submission_id), None)
         if us is None:
             continue

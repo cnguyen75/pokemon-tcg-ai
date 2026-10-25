@@ -120,7 +120,6 @@ def option_features(o: dict[str, Any], cur: dict[str, Any], me: int) -> list[flo
     op_hp = _g(op_act, "hp", 0) if op_act is not None else 0
     op_id = _g(op_act, "id", 0) if op_act is not None else 0
 
-    # card involved by this option
     cid = 0
     area = _g(o, "area")
     index = _g(o, "index")

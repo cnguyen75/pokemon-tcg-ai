@@ -21,7 +21,6 @@ from typing import Any
 _RAINBOW = 10
 _TEAM_ROCKET = 11  # psychic(5) / darkness(7)
 
-# ---------------------------------------------------------------------------
 # Opponent-archetype signatures.  MUST stay in lock-step with agent2/main.py's
 # _ARCH_FLAG / _ARCH_EARLY so the net trains and infers on the SAME observable
 # runtime detector (flagship card first, then early-game shell cards).  Only
@@ -216,7 +215,7 @@ _SIDE = [
     "close_to_win",
 ]
 
-# opponent archetype one-hot + observable capability signals (cycle-2 addition)
+# opponent archetype one-hot + observable capability signals
 ARCH_FEATURE_NAMES = ["arch_" + n for n in _ARCH_NAMES] + [
     "arch_opp_ex",
     "arch_opp_mega",
@@ -327,7 +326,6 @@ def _side_feats(ps: Any, opp_active: Any, CARD: dict[int, Any], ATK: dict[int, A
     f.append(1.0 if (def_hp and board_best >= def_hp) else 0.0)
     f.append(min(act_energy + b_energy, 12) / 12.0)
     f.append(n_evolved / 5.0)
-    # v2 additions
     f.append(min(act_missing, 3) / 3.0)
     f.append(min(act_best / def_hp, 2.0) / 2.0 if def_hp else 0.0)
     f.append(1.0 if (def_hp and 2 * act_best >= def_hp) else 0.0)

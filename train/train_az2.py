@@ -95,7 +95,6 @@ def main() -> None:
     torch.manual_seed(0)
     DATA = os.path.join(REPO, "train", "data")
 
-    # ---------------- BC POLICY data (policy.npz) ----------------
     dp = np.load(os.path.join(DATA, "policy.npz"))
     X_opt, X_state, offs, chosen, ep_p, dtype = (
         dp["X_opt"],
@@ -117,12 +116,10 @@ def main() -> None:
     o_mu, o_sd = X_opt[tr_opt_mask].mean(0), X_opt[tr_opt_mask].std(0) + 1e-6
     Xopt_n = ((X_opt - o_mu) / o_sd).astype(np.float32)
 
-    # ---------------- BC VALUE data (episodes.npz) ----------------
     dv = np.load(os.path.join(DATA, "episodes.npz"))
     Xv, yv, ep_v, hcv = dv["X"], dv["y"], dv["ep"], dv["hc"]
     # value augmentation: hybrid self-play outcome labels (selfplay_azval_*),
     # same (X, y, ep, hc) format — value data on the strongest agent's own
-    # play distribution
     _vg = sorted(glob.glob(os.path.join(DATA, "selfplay_azval_*.npz")))
     if _vg:
         _X, _y, _e, _h = [Xv], [yv], [ep_v], [hcv]
@@ -145,7 +142,6 @@ def main() -> None:
     s_sd = Xv_full[trv].std(0) + 1e-6
     Xstate_n = ((X_state - s_mu) / s_sd).astype(np.float32)
 
-    # ---------------- SELF-PLAY data (az_selfplay_*) ----------------
     sp_files = sorted(glob.glob(os.path.join(DATA, args.sp_glob + ".npz")))
     if not sp_files:
         sp_files = sorted(glob.glob(os.path.join(DATA, args.sp_glob)))
@@ -189,7 +185,6 @@ def main() -> None:
         by_episode_split(sp_ep, frac=0.12, seed=0) if n_sp else (np.zeros(0, int), np.zeros(0, int))
     )
 
-    # ------- dense padded builders -------
     def build_bc(dec_ids: np.ndarray) -> tuple[torch.Tensor, ...]:
         N = len(dec_ids)
         Xo = np.zeros((N, M, Dopt), dtype=np.float32)
@@ -335,12 +330,10 @@ def main() -> None:
             vk = bi % n_vbatch
             bv = idx_v[vk * B : vk * B + B]
             opt.zero_grad()
-            # BC policy (one-hot CE)
             h = net.encode(Xs_tr[bp])
             logits = net.policy_logits_from_h(h, Xo_tr[bp], Mk_tr[bp])
             logp = torch.log_softmax(logits, dim=1)
             lp = -logp[torch.arange(len(bp), device=dev), Ch_tr[bp]].mean()
-            # BC value (BCE)
             vlogit = net.value_logit(Xv_tr[bv])
             lv = F.binary_cross_entropy_with_logits(vlogit, yv_tr[bv])
             loss = lp + LAMBDA_V * lv

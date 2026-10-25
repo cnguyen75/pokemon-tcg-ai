@@ -86,9 +86,6 @@ def effective_damage(attacker_id: int, defender_id: int, damage: int) -> int:
     return damage
 
 
-# ---------------------------------------------------------------- deck
-
-
 def read_deck_csv() -> list[int]:
     path = os.path.join(AGENT_DIR, "deck.csv")
     if not os.path.exists(path):
@@ -110,9 +107,6 @@ PANIC_RESERVE = 60.0  # if remainingOverageTime dips below this, play instantly
 D_WORLDS = 6  # determinizations per decision
 MAX_CANDIDATES = 40  # cap on enumerated first selections
 ROLLOUT_STEPS = 60  # safety cap on greedy rollout length
-
-
-# ---------------------------------------------------------------- helpers
 
 
 def visible_own_cards(ps: Any) -> list[int]:
@@ -173,9 +167,6 @@ def begin_world(obs: Observation, me: int) -> Any:
         opponent_hand=[FILLER_CARD] * ps_opp.handCount,
         opponent_active=opp_active,
     )
-
-
-# ---------------------------------------------------------------- eval
 
 
 def eval_state(cur: Any, me: int) -> float:
@@ -248,8 +239,6 @@ def eval_state(cur: Any, me: int) -> float:
     return v
 
 
-# ---------------------------------------------------------------- action enumeration
-
 _TYPE_PRIO = {
     OptionType.ABILITY: 0,
     OptionType.PLAY: 1,
@@ -290,7 +279,6 @@ def enumerate_selections(select: Any) -> list[list[int]]:
             cands.extend([[i] for i in order])
     if lo == 0:
         cands.append([])  # voluntary pass considered last
-    # dedupe, keep order
     seen, out = set(), []
     for c in cands:
         t = tuple(c)
@@ -304,9 +292,6 @@ def heuristic_choice(select: Any) -> list[int]:
     """Instant fallback move honoring constraints."""
     cands = enumerate_selections(select)
     return cands[0] if cands else []
-
-
-# ---------------------------------------------------------------- search
 
 
 def greedy_rollout(state: Any, me: int) -> float:
@@ -383,9 +368,6 @@ def plan(obs: Observation, me: int, deadline: float) -> list[int]:
         return heuristic_choice(obs.select)
     evaluated.sort(key=lambda x: -x[0])
     return evaluated[0][1]
-
-
-# ---------------------------------------------------------------- entry point
 
 
 def agent(obs_dict: dict) -> list[int]:

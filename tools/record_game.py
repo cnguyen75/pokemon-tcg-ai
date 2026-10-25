@@ -67,7 +67,6 @@ class Recorder:
         self.search = None
         self._wrap()
 
-    # ---------------------------------------------------------- wrappers
     def _wrap(self) -> None:
         mod, rec = self.mod, self
         Policy = mod.Policy
@@ -124,7 +123,6 @@ class Recorder:
 
         mod.det_search, mod.begin_world, mod.beam_turn_value = det_w, begin_w, beam_w
 
-    # ---------------------------------------------------------- naming
     def name(self, cid: int) -> str:
         d = self.card.get(cid)
         return d.name if d is not None else f"card {cid}"

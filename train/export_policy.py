@@ -176,7 +176,6 @@ def main() -> None:
     )
     print(f"wrote {out}", flush=True)
 
-    # ---- verify numpy forward matches torch on held-out ----
     def np_fwd(Xrows: np.ndarray) -> np.ndarray:
         x = (Xrows - mu) / sd
         h = np.maximum(x @ W1.T + b1, 0.0)
@@ -193,7 +192,6 @@ def main() -> None:
         f"numpy-forward held-out top-1: {match / len(te_dec):.4f} (torch {net_t1:.4f})", flush=True
     )
 
-    # ---- dump held-out for behavioral move-match check ----
     hold_offs = [0]
     hold_Xopt, hold_state, hold_chosen, hold_dtype, hold_script = [], [], [], [], []
     for di in te_dec:

@@ -235,7 +235,6 @@ def main() -> None:
     p_ship = shipped_predict(SHIPPED, Xbase[ho])
     p_hc = hcho
 
-    # ---- pooled metrics
     print("\n=== POOLED holdout metrics ===")
     for name, p in (
         ("card", p_card),
@@ -246,7 +245,6 @@ def main() -> None:
         ll = logloss(yho, p) if name != "handcraft" else float("nan")
         print(f"  {name:11s} auc {auc(yho, p):.4f}  logloss {ll:.4f}")
 
-    # ---- per-episode AUC (paired)
     by = {}
     for i, e in enumerate(epho):
         by.setdefault(e, []).append(i)
@@ -290,7 +288,6 @@ def main() -> None:
     paired(a_card, a_hc, "card", "hc")
     paired(a_base, a_ship, "base", "ship")
 
-    # ---- permutation importance of card-feature GROUPS (by zone)
     import card_features as cf
     from cg.api import all_card_data
 
@@ -303,7 +300,6 @@ def main() -> None:
     print(f"\n=== permutation importance (card net, base auc {base_auc:.4f}) ===")
     rng2 = np.random.default_rng(11)
     off = Xbase.shape[1]  # card block starts here in Xfull
-    # whole card block
     for label, cols in (
         [("ALL_CARD", list(range(off, Xfull.shape[1])))]
         + [
@@ -318,7 +314,6 @@ def main() -> None:
         drop = base_auc - auc(yho, cpred(Xp))
         print(f"  {label:16s} ({len(cols):4d} feats): auc drop {drop:+.4f}")
 
-    # ---- inference cost of the card extractor (end-to-end feature build)
     print("\n=== inference cost (card_only_feats extractor) ===")
     import glob
     import json
@@ -327,7 +322,6 @@ def main() -> None:
 
     ATK = {a.attackId: a for a in all_attack()}
     IDX = cf.make_index(VOCAB)
-    # grab some real states
     states = []
     for path in sorted(glob.glob(os.path.join(REPO, "episodes", "v6games", "*.json")))[:5]:
         try:
@@ -356,7 +350,6 @@ def main() -> None:
         cf.card_extract(cur, me, CARD, ATK, VOCAB, IDX)
     dt2 = (time.perf_counter() - t0) / len(states) * 1000
     print(f"  full card_extract (base+card): {dt2:.3f} ms/state")
-    # net forward cost
     xb = np.random.randn(1, Xfull.shape[1]).astype(np.float32)
     cm.eval()
     with torch.no_grad():
