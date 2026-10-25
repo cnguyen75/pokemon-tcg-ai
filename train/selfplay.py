@@ -20,6 +20,7 @@ import os
 import random
 import sys
 import time
+from types import ModuleType
 
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -82,7 +83,7 @@ MATCHUPS = {
 }
 
 
-def load_agent(path, deck_name, tag):
+def load_agent(path: str, deck_name: str, tag: str) -> ModuleType:
     path = os.path.abspath(path)
     if deck_name:
         os.environ["CG_DECK_NAME"] = deck_name
@@ -103,7 +104,9 @@ def load_agent(path, deck_name, tag):
     return mod
 
 
-def play_worker(args):
+def play_worker(
+    args: tuple[str, str, str, str, int, int],
+) -> tuple[list[list[float]], list[int], list[int], list[float], int, int]:
     (a_path, a_deck, b_path, b_deck, n_games, seed) = args
     os.environ["CG_SEED"] = str(seed)
     sys.path.insert(0, CG_HOME)
@@ -161,7 +164,7 @@ def play_worker(args):
     return Xs, ys, eps, hcs, n_games, n_draw
 
 
-def main():
+def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--matchup", required=True, choices=sorted(MATCHUPS))
     ap.add_argument("--games", type=int, default=300)

@@ -30,7 +30,7 @@ SEED = 7000
 PROCS = max((os.cpu_count() or 4) - 2, 1)
 
 
-def main():
+def main() -> None:
     variant = sys.argv[1]
     opp = sys.argv[2] if len(sys.argv) > 2 else "lucario1084"
     apath = os.path.join(REPO, "baselines", variant)

@@ -38,7 +38,7 @@ DIRS = glob.glob(os.path.join(REPO, "episodes", "daily", "*")) + [
 FRESH_TOKENS = ("2026-07-05", "v51games", "v52games", "v5recent")
 
 
-def split_by_episode(ep, rng):
+def split_by_episode(ep: np.ndarray, rng: np.random.Generator) -> tuple[np.ndarray, np.ndarray]:
     uniq = np.unique(ep)
     rng.shuffle(uniq)
     n_hold = max(int(len(uniq) * HOLDOUT), 1)
@@ -47,7 +47,7 @@ def split_by_episode(ep, rng):
     return ~mask, mask
 
 
-def auc(y, s):
+def auc(y: np.ndarray, s: np.ndarray) -> float:
     order = np.argsort(s, kind="mergesort")
     ranks = np.empty(len(s), dtype=np.float64)
     ranks[order] = np.arange(1, len(s) + 1)
@@ -67,7 +67,7 @@ def auc(y, s):
     return (ranks[y == 1].sum() - n1 * (n1 + 1) / 2) / (n1 * n0)
 
 
-def _match_dim(z, Xraw):
+def _match_dim(z: np.lib.npyio.NpzFile, Xraw: np.ndarray) -> np.ndarray:
     """Map the 101-dim cycle-2 feature matrix onto a net's expected input.
 
     The cycle-2 base features are the original 85 followed by the 15 archetype
@@ -82,7 +82,7 @@ def _match_dim(z, Xraw):
     raise ValueError(f"cannot map {Xraw.shape[1]}-dim features to {want}-dim net")
 
 
-def npz_predict(path, Xraw):
+def npz_predict(path: str, Xraw: np.ndarray) -> np.ndarray:
     z = np.load(path)
     Xraw = _match_dim(z, Xraw)
     x = (Xraw.astype(np.float64) - z["mean"]) / z["std"]
@@ -94,7 +94,9 @@ def npz_predict(path, Xraw):
     return 1.0 / (1.0 + np.exp(-logits))
 
 
-def per_episode_aucs(ep, y, scores):
+def per_episode_aucs(
+    ep: np.ndarray, y: np.ndarray, scores: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
     by = {}
     for i, e in enumerate(ep):
         by.setdefault(e, []).append(i)
@@ -121,7 +123,9 @@ NETS = {
 CANDS = ("cand_A_64x32", "cand_B_128x64x32", "cand_C_wep0.7", "cand_D_wep0.3")
 
 
-def report(tag, ep, y, X, hc, fresh_mask):
+def report(
+    tag: str, ep: np.ndarray, y: np.ndarray, X: np.ndarray, hc: np.ndarray, fresh_mask: np.ndarray
+) -> None:
     print(
         f"\n===== {tag}: {len(np.unique(ep[fresh_mask]))} fresh episodes, "
         f"{fresh_mask.sum()} rows ====="
@@ -148,7 +152,7 @@ def report(tag, ep, y, X, hc, fresh_mask):
         )
 
 
-def main():
+def main() -> None:
     rng = np.random.default_rng(SEED)
 
     # ---- episodes

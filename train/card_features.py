@@ -24,6 +24,7 @@ import glob
 import json
 import os
 import sys
+from typing import Any
 
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -46,7 +47,7 @@ N_OTHER = len(_CAT_NAMES)
 _ZONES = ["my_hand", "my_board", "my_discard", "op_board", "op_discard"]
 
 
-def _g(o, k, d=None):
+def _g(o: Any, k: str, d: Any = None) -> Any:
     if isinstance(o, dict):
         v = o.get(k, d)
     else:
@@ -54,7 +55,7 @@ def _g(o, k, d=None):
     return d if v is None else v
 
 
-def _cat_of(cid, CARD):
+def _cat_of(cid: int, CARD: dict[int, Any]) -> str:
     d = CARD.get(cid)
     if d is None:
         return "unknown"
@@ -64,12 +65,12 @@ def _cat_of(cid, CARD):
     return "unknown"
 
 
-def _poke_ids_with_attach(ps, CARD):
+def _poke_ids_with_attach(ps: Any, CARD: dict[int, Any]) -> list[int]:
     """All revealed card ids on a player's board: pokemon + attached energy +
     tools + pre-evolution cards (active and bench)."""
     ids = []
 
-    def add_poke(p):
+    def add_poke(p: Any) -> None:
         if p is None:
             return
         ids.append(_g(p, "id", 0))
@@ -90,15 +91,15 @@ def _poke_ids_with_attach(ps, CARD):
     return ids
 
 
-def _hand_ids(ps):
+def _hand_ids(ps: Any) -> list[int]:
     return [_g(c, "id", 0) for c in (_g(ps, "hand", []) or []) if c is not None]
 
 
-def _discard_ids(ps):
+def _discard_ids(ps: Any) -> list[int]:
     return [_g(c, "id", 0) for c in (_g(ps, "discard", []) or []) if c is not None]
 
 
-def zone_ids(cur, me, CARD):
+def zone_ids(cur: Any, me: int, CARD: dict[int, Any]) -> dict[str, list[int]]:
     """dict zone_name -> list of card ids for player `me`'s perspective."""
     players = _g(cur, "players")
     my, op = players[me], players[1 - me]
@@ -114,7 +115,7 @@ def zone_ids(cur, me, CARD):
 # ---------------------------------------------------------------------------
 # Vocabulary
 # ---------------------------------------------------------------------------
-def build_vocab(dirs, CARD, top_n=300):
+def build_vocab(dirs: list[str], CARD: dict[int, Any], top_n: int = 300) -> list[int]:
     """Count card-id frequency across all replays in `dirs`, keep the top_n."""
     from collections import Counter
 
@@ -148,16 +149,16 @@ def build_vocab(dirs, CARD, top_n=300):
 VOCAB_PATH = os.path.join(REPO, "train", "data", "card_vocab.json")
 
 
-def load_vocab():
+def load_vocab() -> list[int]:
     with open(VOCAB_PATH) as f:
         return json.load(f)
 
 
-def make_index(vocab):
+def make_index(vocab: list[int]) -> dict[int, int]:
     return {cid: i for i, cid in enumerate(vocab)}
 
 
-def card_feature_names(vocab, CARD):
+def card_feature_names(vocab: list[int], CARD: dict[int, Any]) -> list[str]:
     names = []
     for z in _ZONES:
         for cid in vocab:
@@ -168,7 +169,9 @@ def card_feature_names(vocab, CARD):
     return names
 
 
-def card_only_feats(cur, me, CARD, vocab, idx):
+def card_only_feats(
+    cur: Any, me: int, CARD: dict[int, Any], vocab: list[int], idx: dict[int, int]
+) -> list[float]:
     """Just the card-level part: len == len(_ZONES) * (len(vocab)+N_OTHER)."""
     V = len(vocab)
     W = V + N_OTHER
@@ -188,7 +191,14 @@ def card_only_feats(cur, me, CARD, vocab, idx):
     return out
 
 
-def card_extract(cur, me, CARD, ATK, vocab, idx):
+def card_extract(
+    cur: Any,
+    me: int,
+    CARD: dict[int, Any],
+    ATK: dict[int, Any],
+    vocab: list[int],
+    idx: dict[int, int],
+) -> list[float]:
     """base 100 features + squashed hc + card features (net input)."""
     f = vf.extract(cur, me, CARD, ATK)
     f.append(vf.hc_squash(vf.handcrafted_eval(cur, me)))

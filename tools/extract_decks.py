@@ -16,7 +16,7 @@ for r in csv.DictReader(open(CARD_CSV)):
     names.setdefault(int(r["Card ID"]), r["Card Name"])
 
 
-def deck_key(deck):
+def deck_key(deck: list[int]) -> tuple[int, ...]:
     return tuple(sorted(deck))
 
 

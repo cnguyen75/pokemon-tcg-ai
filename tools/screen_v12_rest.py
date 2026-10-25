@@ -25,7 +25,7 @@ from league import play_games, wilson  # noqa: E402
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
-def B(name):
+def B(name: str) -> str:
     return os.path.join(REPO, "baselines", name)
 
 
@@ -42,7 +42,7 @@ SEED = 7000
 PROCS = max((os.cpu_count() or 4) - 2, 1)
 
 
-def main():
+def main() -> None:
     # Optional argv: AGENT OPP -> run just that cell (background jobs get
     # killed by the external watchdog; run cells in foreground instead).
     agents, opps = AGENTS, OPPS

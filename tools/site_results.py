@@ -29,6 +29,7 @@ import json
 import math
 import os
 import re
+from typing import Any
 
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -44,7 +45,7 @@ CELL = re.compile(
 )
 
 
-def wilson(w, n, z=1.96):
+def wilson(w: int, n: int, z: float = 1.96) -> list[float]:
     p = w / n
     den = 1 + z * z / n
     c = (p + z * z / (2 * n)) / den
@@ -52,7 +53,7 @@ def wilson(w, n, z=1.96):
     return [round(100 * (c - r), 1), round(100 * (c + r), 1)]
 
 
-def local_screens():
+def local_screens() -> dict[str, Any]:
     cells = []
     for path in LOGS:
         for i, line in enumerate(open(os.path.join(REPO, path)), 1):
@@ -89,7 +90,7 @@ def local_screens():
     }
 
 
-def ladder(sub_csv, lb_csv, team):
+def ladder(sub_csv: str, lb_csv: str, team: str) -> dict[str, Any]:
     rows = list(csv.DictReader(open(sub_csv)))
     rows.sort(key=lambda r: r["date"])
     builds, every, copies = [], [], Counter()
@@ -135,14 +136,14 @@ def ladder(sub_csv, lb_csv, team):
     }
 
 
-def matchups(ep_dir, submission_ids):
+def matchups(ep_dir: str, submission_ids: list[int]) -> dict[str, dict[str, Any]]:
     names, cat = {}, {}
     for r in csv.DictReader(open(os.path.join(REPO, "data", "EN_Card_Data.csv"))):
         cid = int(r["Card ID"])
         names.setdefault(cid, r["Card Name"])
         cat.setdefault(cid, r.get("Stage (Pokémon)/Type (Energy and Trainer)", ""))
 
-    def archetype(deck):  # same rule as tools/my_episodes.py
+    def archetype(deck: list[int]) -> str:  # same rule as tools/my_episodes.py
         poke = Counter(names.get(c, str(c)) for c in deck if "Pok" in cat.get(c, ""))
         tops = [n for n, k in poke.most_common(6) if k >= 2][:3]
         return " / ".join(sorted(tops)) if tops else "?"
@@ -182,7 +183,7 @@ def matchups(ep_dir, submission_ids):
     return out
 
 
-def value_head(path):
+def value_head(path: str) -> dict[str, Any]:
     """Evaluation metrics saved inside the value-head checkpoint by train/train_az2.py."""
     import torch
 
@@ -198,7 +199,7 @@ def value_head(path):
     }
 
 
-def main():
+def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("out")
     ap.add_argument("--submissions", required=True)

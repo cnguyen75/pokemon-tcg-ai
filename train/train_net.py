@@ -34,7 +34,9 @@ HOLDOUT = 0.15
 SEED = 7
 
 
-def load_source(paths, tag_offset):
+def load_source(
+    paths: list[str], tag_offset: int
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     Xs, ys, eps, hcs = [], [], [], []
     for p in paths:
         d = np.load(p)
@@ -45,7 +47,7 @@ def load_source(paths, tag_offset):
     return (np.concatenate(Xs), np.concatenate(ys), np.concatenate(eps), np.concatenate(hcs))
 
 
-def split_by_episode(ep, rng):
+def split_by_episode(ep: np.ndarray, rng: np.random.Generator) -> tuple[np.ndarray, np.ndarray]:
     uniq = np.unique(ep)
     rng.shuffle(uniq)
     n_hold = max(int(len(uniq) * HOLDOUT), 1)
@@ -54,7 +56,7 @@ def split_by_episode(ep, rng):
     return ~mask, mask
 
 
-def auc(y, s):
+def auc(y: np.ndarray, s: np.ndarray) -> float:
     order = np.argsort(s, kind="mergesort")
     ranks = np.empty(len(s), dtype=np.float64)
     ranks[order] = np.arange(1, len(s) + 1)
@@ -75,12 +77,12 @@ def auc(y, s):
     return (ranks[y == 1].sum() - n1 * (n1 + 1) / 2) / (n1 * n0)
 
 
-def logloss(y, p):
+def logloss(y: np.ndarray, p: np.ndarray) -> float:
     p = np.clip(p, 1e-7, 1 - 1e-7)
     return float(-(y * np.log(p) + (1 - y) * np.log(1 - p)).mean())
 
 
-def main():
+def main() -> None:
     rng = np.random.default_rng(SEED)
     torch.manual_seed(SEED)
 
@@ -127,7 +129,7 @@ def main():
     std = Xtr.std(axis=0)
     std[std < 1e-6] = 1.0
 
-    def norm(X):
+    def norm(X: np.ndarray) -> np.ndarray:
         return (X - mean) / std
 
     Xtr_n = norm(Xtr)
@@ -156,7 +158,7 @@ def main():
     Xho_s, yho_s, hho_s = norm(Xs[ho_s]), ys_[ho_s], hcs[ho_s]
     Xva_e, yva_e = norm(Xe[va_e]), ye[va_e]
 
-    def predict(Xn):
+    def predict(Xn: np.ndarray) -> np.ndarray:
         if len(Xn) == 0:
             return np.empty((0,), dtype=np.float32)
         with torch.no_grad():
@@ -235,7 +237,7 @@ def main():
 
     # ---- per-episode AUC (paired): search compares futures of the SAME
     # game, so within-game discrimination is the metric that matters most.
-    def per_episode(scores):
+    def per_episode(scores: np.ndarray) -> np.ndarray:
         vals = []
         for e, idx in by_ep.items():
             yy = yho_e[idx]
@@ -254,7 +256,7 @@ def main():
         f"net wins {(dd > 0).mean() * 100:.0f}% of episodes)"
     )
 
-    def per_episode_s(scores, ho_eps_s, yho):
+    def per_episode_s(scores: np.ndarray, ho_eps_s: np.ndarray, yho: np.ndarray) -> np.ndarray:
         by = {}
         for i, e in enumerate(ho_eps_s):
             by.setdefault(e, []).append(i)
@@ -275,7 +277,7 @@ def main():
     )
 
     # ---- shipped (old) net evaluated on the SAME new holdout
-    def npz_predict(path, Xraw):
+    def npz_predict(path: str, Xraw: np.ndarray) -> np.ndarray:
         z = np.load(path)
         want = z["mean"].shape[0]
         if want != Xraw.shape[1] and want == 86 and Xraw.shape[1] >= 86:

@@ -11,6 +11,7 @@ text; direct labels, no legend.
 from datetime import date
 import json
 import os
+from typing import Any
 from xml.sax.saxutils import escape
 
 
@@ -36,7 +37,7 @@ LABELS = {
 STACKED = {"v4": (940, 0), "v5": (915, 0), "v6": (890, 16), "v10_azval": (870, 16)}
 
 
-def head(W, H, title, desc):
+def head(W: int, H: int, title: str, desc: str) -> list[str]:
     return [
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}" '
         f'role="img" aria-labelledby="t d" font-family="Archivo, sans-serif">',
@@ -46,14 +47,23 @@ def head(W, H, title, desc):
     ]
 
 
-def text(x, y, s, size=14, fill=INK, weight="400", anchor="start", extra=""):
+def text(
+    x: float,
+    y: float,
+    s: str,
+    size: float = 14,
+    fill: str = INK,
+    weight: str = "400",
+    anchor: str = "start",
+    extra: str = "",
+) -> str:
     return (
         f'<text x="{x:.1f}" y="{y:.1f}" font-size="{size}" font-weight="{weight}" fill="{fill}" '
         f'text-anchor="{anchor}"{extra}>{escape(s)}</text>'
     )
 
 
-def ladder_svg(res):
+def ladder_svg(res: dict[str, Any]) -> str:
     lad = res["ladder"]
     builds = [b for b in lad["builds_first_submission"] if b["rating"] is not None]
     W, H = 920, 490
@@ -61,11 +71,11 @@ def ladder_svg(res):
     d0, d1 = date(2026, 6, 30), date(2026, 7, 30)
     y0, y1 = 500, 950
 
-    def x(d):
+    def x(d: str) -> float:
         d = date.fromisoformat(d)
         return L + (d - d0).days / (d1 - d0).days * (R - L)
 
-    def y(v):
+    def y(v: float) -> float:
         return B - (v - y0) / (y1 - y0) * (B - T)
 
     lb = lad["leaderboard"]
@@ -158,7 +168,7 @@ def ladder_svg(res):
     return "\n".join(p)
 
 
-def noise_svg(res):
+def noise_svg(res: dict[str, Any]) -> str:
     cells = res["local_screens"]["cells"]
     rep = {}
     for c in cells:
@@ -196,7 +206,7 @@ def noise_svg(res):
     ]
     H = top + len(rows) * row_h + len(groups) * 44 + 40
 
-    def x(v):
+    def x(v: float) -> float:
         return label_w + v / 100 * plot_w
 
     p = head(
@@ -250,7 +260,7 @@ def noise_svg(res):
     return "\n".join(p)
 
 
-def main():
+def main() -> None:
     res = json.load(open(os.path.join(REPO, "results", "results.json")))
     os.makedirs(os.path.join(REPO, "figures"), exist_ok=True)
     for name, svg in (("ladder", ladder_svg(res)), ("noise", noise_svg(res))):

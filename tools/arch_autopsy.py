@@ -14,6 +14,7 @@ import glob
 import json
 import os
 import sys
+from typing import Any
 
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -24,12 +25,12 @@ for r in csv.DictReader(open(os.path.join(ROOT, "data", "EN_Card_Data.csv"))):
     NAMES.setdefault(int(r["Card ID"]), r["Card Name"])
 
 
-def nm(cid):
+def nm(cid: int) -> str:
     n = NAMES.get(cid, f"#{cid}")
     return n[:14]
 
 
-def mon(m):
+def mon(m: dict[str, Any] | None) -> str:
     if not m:
         return "-"
     e = len(m.get("energies") or [])
@@ -37,7 +38,7 @@ def mon(m):
     return f"{nm(m['id'])} {m['hp']}/{m['maxHp']}hp {e}e{tool}"
 
 
-def main():
+def main() -> None:
     flagship = int(sys.argv[1])
     want = sys.argv[2] if len(sys.argv) > 2 else "L"
     for f in sorted(glob.glob(os.path.join(ROOT, "episodes", "mine", "episode-*-replay.json"))):

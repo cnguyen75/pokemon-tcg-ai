@@ -35,7 +35,7 @@ D_OPT = 38
 class _ResBlock(nn.Module):
     """Pre-activation-ish residual MLP block: x + LN(W2 relu drop(LN(W1 x)))."""
 
-    def __init__(self, d_model, p_drop):
+    def __init__(self, d_model: int, p_drop: float) -> None:
         super().__init__()
         self.fc1 = nn.Linear(d_model, d_model)
         self.ln1 = nn.LayerNorm(d_model)
@@ -43,7 +43,7 @@ class _ResBlock(nn.Module):
         self.fc2 = nn.Linear(d_model, d_model)
         self.ln2 = nn.LayerNorm(d_model)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         h = F.relu(self.ln1(self.fc1(x)))
         h = self.drop(h)
         h = self.ln2(self.fc2(h))
@@ -51,7 +51,14 @@ class _ResBlock(nn.Module):
 
 
 class AZNet(nn.Module):
-    def __init__(self, d_state=D_STATE, d_opt=D_OPT, d_model=256, n_blocks=3, p_drop=0.1):
+    def __init__(
+        self,
+        d_state: int = D_STATE,
+        d_opt: int = D_OPT,
+        d_model: int = 256,
+        n_blocks: int = 3,
+        p_drop: float = 0.1,
+    ) -> None:
         super().__init__()
         self.d_state = d_state
         self.d_opt = d_opt
@@ -116,7 +123,7 @@ class AZNet(nn.Module):
                 nn.Linear(d_model // 2, 1),
             )
 
-    def encode(self, x_state):
+    def encode(self, x_state: torch.Tensor) -> torch.Tensor:
         if self.n_blocks > 0:
             h = self.inp(x_state)
             for b in self.blocks:
@@ -124,14 +131,16 @@ class AZNet(nn.Module):
             return h
         return self.enc(x_state)
 
-    def value_from_h(self, h):
+    def value_from_h(self, h: torch.Tensor) -> torch.Tensor:
         # clamp keeps the win-prob logit in a sane range (stops BCE blow-up)
         return self.value(h).squeeze(-1).clamp(-12.0, 12.0)  # logit
 
-    def value_logit(self, x_state):
+    def value_logit(self, x_state: torch.Tensor) -> torch.Tensor:
         return self.value_from_h(self.encode(x_state))
 
-    def policy_logits_from_h(self, h, x_opt, mask=None):
+    def policy_logits_from_h(
+        self, h: torch.Tensor, x_opt: torch.Tensor, mask: torch.Tensor | None = None
+    ) -> torch.Tensor:
         """h: (N, d_model)  x_opt: (N, M, d_opt)  mask: (N, M) 1=real 0=pad
         returns per-option logits (N, M) with pads set to -inf."""
         N, M, _ = x_opt.shape
@@ -142,7 +151,9 @@ class AZNet(nn.Module):
             logits = logits + (mask - 1.0) * 1e9
         return logits
 
-    def forward(self, x_state, x_opt, mask=None):
+    def forward(
+        self, x_state: torch.Tensor, x_opt: torch.Tensor, mask: torch.Tensor | None = None
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """Joint forward. Returns (policy_logits (N,M), value_logit (N,))."""
         h = self.encode(x_state)
         v = self.value_from_h(h)
@@ -151,7 +162,9 @@ class AZNet(nn.Module):
 
     # ---- single-decision inference helpers (used by MCTS) ----
     @torch.no_grad()
-    def eval_leaf(self, x_state_1, x_opt_1):
+    def eval_leaf(
+        self, x_state_1: torch.Tensor, x_opt_1: torch.Tensor
+    ) -> tuple[torch.Tensor, float]:
         """x_state_1: (D_STATE,)  x_opt_1: (K, D_OPT) for K legal options.
         Returns (policy_probs (K,) numpy, value_prob float in [0,1])."""
         self.eval()
@@ -164,5 +177,5 @@ class AZNet(nn.Module):
         return probs, v
 
 
-def param_count(net):
+def param_count(net: nn.Module) -> int:
     return sum(p.numel() for p in net.parameters())

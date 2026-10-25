@@ -22,6 +22,7 @@ import glob
 import json
 import os
 import sys
+from typing import Any
 
 import numpy as np
 
@@ -54,7 +55,7 @@ DIRS = glob.glob(os.path.join(REPO, "episodes", "daily", "*")) + [
 N_OPT_TYPES = 17  # OptionType enum size
 
 
-def _g(o, k, d=None):
+def _g(o: Any, k: str, d: Any = None) -> Any:
     if isinstance(o, dict):
         v = o.get(k, d)
     else:
@@ -62,7 +63,9 @@ def _g(o, k, d=None):
     return d if v is None else v
 
 
-def _card_at(cur_players, me, area, index, playerIndex):
+def _card_at(
+    cur_players: list[dict[str, Any]], me: int, area: int, index: int, playerIndex: int | None
+) -> dict[str, Any] | None:
     """Resolve the Card/Pokemon dict an option refers to (replay JSON dict)."""
     pi = playerIndex if playerIndex is not None else me
     try:
@@ -81,7 +84,7 @@ def _card_at(cur_players, me, area, index, playerIndex):
     return None
 
 
-def _card_static(cid):
+def _card_static(cid: int) -> list[float]:
     """(is_pokemon, is_item, is_supp, is_stadium, is_energy, is_tool,
     is_basic, is_stage1, is_stage2, is_ex, is_mega, hp_norm, retreat_norm)"""
     d = CARD.get(cid)
@@ -105,7 +108,7 @@ def _card_static(cid):
     ]
 
 
-def option_features(o, cur, me):
+def option_features(o: dict[str, Any], cur: dict[str, Any], me: int) -> list[float]:
     """Feature vector for a single legal option (from replay JSON dicts)."""
     t = int(_g(o, "type", -1))
     f = [1.0 if t == i else 0.0 for i in range(N_OPT_TYPES)]  # 17 type one-hot
@@ -168,7 +171,9 @@ def option_features(o, cur, me):
 D_OPT = 38
 
 
-def parse_file(path, ep_id):
+def parse_file(
+    path: str, ep_id: int
+) -> list[tuple[list[float], list[list[float]], int, list[float], int]] | None:
     try:
         d = json.load(open(path))
     except Exception:
@@ -235,7 +240,7 @@ def parse_file(path, ep_id):
     return decisions
 
 
-def main():
+def main() -> None:
     files = []
     for dpath in DIRS:
         files += sorted(glob.glob(os.path.join(dpath, "*.json")))

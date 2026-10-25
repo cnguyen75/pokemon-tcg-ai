@@ -21,11 +21,11 @@ KAGGLE = os.path.expanduser("~/.local/bin/kaggle")
 MAX_FILES = int(os.environ.get("MINE_MAX_FILES", "400"))  # ~1.5GB/day; full day is ~21GB
 
 
-def sh(args):
+def sh(args: list[str]) -> subprocess.CompletedProcess[str]:
     return subprocess.run(args, capture_output=True, text=True, timeout=600)
 
 
-def main():
+def main() -> int:
     if len(sys.argv) > 1:
         day = sys.argv[1]
     else:

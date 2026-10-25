@@ -26,7 +26,7 @@ sys.path.insert(0, os.path.join(REPO, "train"))
 SEED = 7
 
 
-def auc(y, s):
+def auc(y: np.ndarray, s: np.ndarray) -> float:
     order = np.argsort(s, kind="mergesort")
     ranks = np.empty(len(s))
     ranks[order] = np.arange(1, len(s) + 1)
@@ -44,7 +44,7 @@ def auc(y, s):
     return 0.5 if n1 == 0 or n0 == 0 else (ranks[y == 1].sum() - n1 * (n1 + 1) / 2) / (n1 * n0)
 
 
-def split_by_episode(ep, frac=0.15):
+def split_by_episode(ep: np.ndarray, frac: float = 0.15) -> tuple[np.ndarray, np.ndarray]:
     rng = np.random.default_rng(SEED)
     uniq = np.unique(ep)
     rng.shuffle(uniq)
@@ -53,7 +53,7 @@ def split_by_episode(ep, frac=0.15):
     return ~m, m
 
 
-def per_ep(yho, p, epho):
+def per_ep(yho: np.ndarray, p: np.ndarray, epho: np.ndarray) -> np.ndarray:
     by = {}
     for i, e in enumerate(epho):
         by.setdefault(e, []).append(i)
@@ -66,7 +66,7 @@ def per_ep(yho, p, epho):
     return np.asarray(vals)
 
 
-def main():
+def main() -> None:
     d = np.load(os.path.join(REPO, "train", "data", "episodes_card.npz"))
     Xb = d["Xbase"].astype(np.float32)
     Xc = d["Xcard"].astype(np.float32)
@@ -75,13 +75,13 @@ def main():
     tr, ho = split_by_episode(ep)
     yho, epho = y[ho], ep[ho]
 
-    def norm_fit(X):
+    def norm_fit(X: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         mn = X[tr].mean(0)
         sd = X[tr].std(0)
         sd[sd < 1e-6] = 1.0
         return mn, sd
 
-    def lr(X, C):
+    def lr(X: np.ndarray, C: float) -> np.ndarray:
         mn, sd = norm_fit(X)
         Xt = (X[tr] - mn) / sd
         Xh = (X[ho] - mn) / sd
@@ -127,7 +127,7 @@ def main():
     # (Jul 8) trained on it. v6games + daily 07-06/07 are the freshest sets.
     fresh_tags = ("v6games", "daily/2026-07-06", "daily/2026-07-07")
 
-    def is_fresh(idx):
+    def is_fresh(idx: int) -> bool:
         p = files[idx] if idx < len(files) else ""
         return any(t in p for t in fresh_tags)
 
@@ -139,7 +139,7 @@ def main():
 
     z = np.load(os.path.join(REPO, "agent2", "value_net.npz"))
 
-    def ship(Xraw):
+    def ship(Xraw: np.ndarray) -> np.ndarray:
         x = (Xraw.astype(np.float64) - z["mean"]) / z["std"]
         i = 1
         while f"W{i + 1}" in z:

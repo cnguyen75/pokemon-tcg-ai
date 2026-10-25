@@ -31,6 +31,8 @@ import os
 import random
 import sys
 import time
+from types import ModuleType
+from typing import Any
 
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -56,7 +58,7 @@ AREA = {
 
 
 class Recorder:
-    def __init__(self, mod):
+    def __init__(self, mod: ModuleType) -> None:
         self.mod = mod
         self.card = mod.CARD
         self.atk = mod.ATK
@@ -66,12 +68,12 @@ class Recorder:
         self._wrap()
 
     # ---------------------------------------------------------- wrappers
-    def _wrap(self):
+    def _wrap(self) -> None:
         mod, rec = self.mod, self
         Policy = mod.Policy
         choose, score_option = Policy.choose, Policy.score_option
 
-        def choose_w(pol):
+        def choose_w(pol: Any) -> Any:
             if mod.IN_VERIFY or rec.top is not None:
                 return choose(pol)
             rec.top, rec.scores, rec.search = pol, [], None
@@ -80,7 +82,7 @@ class Recorder:
             finally:
                 rec.top = None
 
-        def score_w(pol, o):
+        def score_w(pol: Any, o: Any) -> float:
             s = score_option(pol, o)
             if pol is rec.top and len(rec.scores) < len(pol.sel.option):
                 rec.scores.append(s)
@@ -90,7 +92,7 @@ class Recorder:
 
         det_search, begin_world, beam = mod.det_search, mod.begin_world, mod.beam_turn_value
 
-        def det_w(pol, cands):
+        def det_w(pol: Any, cands: list[Any]) -> Any:
             rec._worlds = []
             out = det_search(pol, cands)
             full = [w for w in rec._worlds if len(w) == len(cands)]
@@ -110,11 +112,11 @@ class Recorder:
             }
             return out
 
-        def begin_w(*a, **k):
+        def begin_w(*a: Any, **k: Any) -> Any:
             rec._worlds.append([])
             return begin_world(*a, **k)
 
-        def beam_w(root_id, first_choice, *a, **k):
+        def beam_w(root_id: Any, first_choice: Any, *a: Any, **k: Any) -> float | None:
             v = beam(root_id, first_choice, *a, **k)
             if v is not None and rec._worlds:
                 rec._worlds[-1].append(v)
@@ -123,11 +125,11 @@ class Recorder:
         mod.det_search, mod.begin_world, mod.beam_turn_value = det_w, begin_w, beam_w
 
     # ---------------------------------------------------------- naming
-    def name(self, cid):
+    def name(self, cid: int) -> str:
         d = self.card.get(cid)
         return d.name if d is not None else f"card {cid}"
 
-    def poke(self, p):
+    def poke(self, p: Any) -> dict[str, Any] | None:
         if p is None:
             return None
         return {
@@ -138,11 +140,11 @@ class Recorder:
             "tools": [self.name(t.id) for t in (p.tools or [])],
         }
 
-    def card_at(self, obs, area, index, player):
+    def card_at(self, obs: Any, area: AreaType, index: int, player: int) -> str:
         c = self.mod.get_card(obs, area, index, player)
         return self.name(c.id) if c is not None and getattr(c, "id", None) else "a card"
 
-    def label(self, obs, o, me):
+    def label(self, obs: Any, o: Any, me: int) -> str:
         t = o.type
         pl = o.playerIndex if o.playerIndex is not None else me
         try:
@@ -191,7 +193,7 @@ class Recorder:
             pass
         return OptionType(t).name.replace("_", " ").title()
 
-    def snapshot(self, cur, me):
+    def snapshot(self, cur: Any, me: int) -> list[dict[str, Any]]:
         out = []
         for i, p in enumerate(cur.players):
             s = {
@@ -208,7 +210,7 @@ class Recorder:
             out.append(s)
         return out
 
-    def events(self, logs, me):
+    def events(self, logs: list[dict[str, Any]] | None, me: int) -> list[dict[str, Any]]:
         ev = []
         who = lambda i: "agent" if i == me else "opponent"  # noqa: E731
         for lg in logs or []:
@@ -276,7 +278,7 @@ class Recorder:
         return ev
 
 
-def main():
+def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("agent")
     ap.add_argument("opponent")

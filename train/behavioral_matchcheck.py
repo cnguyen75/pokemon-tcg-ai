@@ -57,7 +57,7 @@ W1, b1, W2, b2, W3, b3 = W["W1"], W["b1"], W["W2"], W["b2"], W["W3"], W["b3"]
 D_opt = int(W["D_opt"])
 
 
-def policy_logits(a, b, di):
+def policy_logits(a: int, b: int, di: int) -> np.ndarray:
     X = np.concatenate([X_opt[a:b], np.tile(X_state[di], (b - a, 1))], axis=1).astype(np.float32)
     x = (X - mean) / std
     h = np.maximum(x @ W1.T + b1, 0.0)
@@ -66,7 +66,7 @@ def policy_logits(a, b, di):
 
 
 # per-option type from the one-hot in X_opt[:, :17]
-def opt_type(i):
+def opt_type(i: int) -> int:
     return int(np.argmax(X_opt[i, :17]))
 
 

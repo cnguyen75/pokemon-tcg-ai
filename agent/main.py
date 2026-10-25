@@ -14,6 +14,7 @@ import os
 import random
 import sys
 import time
+from typing import Any
 
 
 # kaggle_environments exec()s this file, so __file__ may not exist
@@ -58,7 +59,7 @@ except Exception:
     pass
 
 
-def prize_yield(pokemon_id):
+def prize_yield(pokemon_id: int) -> int:
     """Prizes the opponent takes when this Pokemon is KO'd."""
     d = CARD_TABLE.get(pokemon_id)
     if d is None:
@@ -70,7 +71,7 @@ def prize_yield(pokemon_id):
     return 1
 
 
-def effective_damage(attacker_id, defender_id, damage):
+def effective_damage(attacker_id: int, defender_id: int, damage: int) -> int:
     """Apply weakness x2 / resistance -30 from card data."""
     a = CARD_TABLE.get(attacker_id)
     d = CARD_TABLE.get(defender_id)
@@ -88,7 +89,7 @@ def effective_damage(attacker_id, defender_id, damage):
 # ---------------------------------------------------------------- deck
 
 
-def read_deck_csv():
+def read_deck_csv() -> list[int]:
     path = os.path.join(AGENT_DIR, "deck.csv")
     if not os.path.exists(path):
         path = "deck.csv"
@@ -114,7 +115,7 @@ ROLLOUT_STEPS = 60  # safety cap on greedy rollout length
 # ---------------------------------------------------------------- helpers
 
 
-def visible_own_cards(ps):
+def visible_own_cards(ps: Any) -> list[int]:
     """Multiset of our cards whose identity we can currently see."""
     seen = []
     for c in ps.hand or []:
@@ -138,7 +139,7 @@ def visible_own_cards(ps):
     return seen
 
 
-def sample_own_hidden(obs, me):
+def sample_own_hidden(obs: Observation, me: int) -> tuple[list[int], list[int]]:
     """Split our unseen cards consistently into (deck order, prizes)."""
     ps = obs.current.players[me]
     unseen = Counter(DECK)
@@ -156,7 +157,7 @@ def sample_own_hidden(obs, me):
     return pool[:n_deck], pool[n_deck : n_deck + n_prize]
 
 
-def begin_world(obs, me):
+def begin_world(obs: Observation, me: int) -> Any:
     ps_opp = obs.current.players[1 - me]
     your_deck, your_prize = sample_own_hidden(obs, me)
     opp_active = []
@@ -177,7 +178,7 @@ def begin_world(obs, me):
 # ---------------------------------------------------------------- eval
 
 
-def eval_state(cur, me):
+def eval_state(cur: Any, me: int) -> float:
     if cur.result >= 0:
         if cur.result == 2:
             return 0.0
@@ -260,7 +261,7 @@ _TYPE_PRIO = {
 }
 
 
-def option_priority(o):
+def option_priority(o: Any) -> tuple[int, int]:
     p = _TYPE_PRIO.get(o.type, 5)
     if o.type == OptionType.ATTACK:
         # prefer higher printed damage within attacks
@@ -269,7 +270,7 @@ def option_priority(o):
     return (p, 0)
 
 
-def enumerate_selections(select):
+def enumerate_selections(select: Any) -> list[list[int]]:
     """Candidate index-lists honoring min/max count, capped."""
     n = len(select.option)
     lo = max(select.minCount, 0)
@@ -299,7 +300,7 @@ def enumerate_selections(select):
     return out[:MAX_CANDIDATES] or [list(range(min(max(lo, 1), n)))]
 
 
-def heuristic_choice(select):
+def heuristic_choice(select: Any) -> list[int]:
     """Instant fallback move honoring constraints."""
     cands = enumerate_selections(select)
     return cands[0] if cands else []
@@ -308,7 +309,7 @@ def heuristic_choice(select):
 # ---------------------------------------------------------------- search
 
 
-def greedy_rollout(state, me):
+def greedy_rollout(state: Any, me: int) -> float:
     """Play out our turn AND the opponent's greedy reply, then evaluate.
 
     Both sides follow the same heuristic policy. The opponent's hidden hand
@@ -336,7 +337,7 @@ DEBUG = os.environ.get("CG_AGENT_DEBUG") == "1"
 _stats = {"plans": 0, "worlds_ok": 0, "worlds_fail": 0, "steps_fail": 0}
 
 
-def plan(obs, me, deadline):
+def plan(obs: Observation, me: int, deadline: float) -> list[int]:
     candidates = enumerate_selections(obs.select)
     if len(candidates) <= 1:
         return candidates[0] if candidates else []

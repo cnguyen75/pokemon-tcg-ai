@@ -57,7 +57,7 @@ from league import play_games, wilson  # noqa: E402
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
-def B(name):
+def B(name: str) -> str:
     return os.path.join(REPO, "baselines", name)
 
 
@@ -98,7 +98,9 @@ PANEL = {
 }
 
 
-def run_matchup(target, opp_dir, n, procs, seed_base):
+def run_matchup(
+    target: str, opp_dir: str, n: int, procs: int, seed_base: int
+) -> tuple[int, int, int]:
     per = math.ceil(n / procs)
     jobs = [(target, opp_dir, per, seed_base + i) for i in range(procs)]
     with Pool(procs) as pool:
@@ -110,7 +112,7 @@ def run_matchup(target, opp_dir, n, procs, seed_base):
     return w, l, d
 
 
-def main():
+def main() -> None:
     ap = argparse.ArgumentParser(description="Meta-weighted gauntlet.")
     ap.add_argument("agent_dir")
     ap.add_argument("--games-per", type=int, default=150)

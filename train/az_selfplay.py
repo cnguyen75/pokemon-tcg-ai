@@ -36,6 +36,8 @@ import os
 import random
 import sys
 import time
+from types import ModuleType
+from typing import Any
 
 import numpy as np
 
@@ -46,7 +48,7 @@ AGENT_AZ = os.path.join(REPO, "agent_az")
 AGENT2 = os.path.join(REPO, "agent2")
 
 
-def _load_az(sims, budget, deadline):
+def _load_az(sims: int, budget: float, deadline: float) -> ModuleType:
     """Import agent_az/main.py in-process with self-play search bounds set via
     env BEFORE import (main.py reads them at module load)."""
     os.environ["CG_AZ_SIMS"] = str(sims)
@@ -68,7 +70,7 @@ def _load_az(sims, budget, deadline):
     return mod
 
 
-def _load_opp(path):
+def _load_opp(path: str) -> ModuleType:
     path = os.path.abspath(path)
     for m in ("value_features", "value_net", "deck_configs", "policy_net", "features"):
         sys.modules.pop(m, None)
@@ -91,7 +93,20 @@ def _load_opp(path):
     return mod
 
 
-def play_worker(args):
+def play_worker(
+    args: tuple[int, int, int, float, float, float, str],
+) -> tuple[
+    list[np.ndarray],
+    list[np.ndarray],
+    list[np.ndarray],
+    list[int],
+    np.ndarray,
+    np.ndarray,
+    int,
+    int,
+    float,
+    int,
+]:
     (n_games, seed, sims, budget, deadline, temp, opp_kind) = args
     os.environ["CG_SEED"] = str(seed)
     az = _load_az(sims, budget, deadline)
@@ -127,7 +142,7 @@ def play_worker(args):
     az_move_wall = 0.0
     az_moves = 0
 
-    def az_agent_recording(obs_dict, me, gid):
+    def az_agent_recording(obs_dict: dict[str, Any], me: int, gid: int) -> list[int]:
         """agent_az's decision at THIS node, recording MAIN visit dists."""
         nonlocal az_move_wall, az_moves
         if obs_dict.get("select") is None:
@@ -226,7 +241,7 @@ def play_worker(args):
     )
 
 
-def main():
+def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--games", type=int, default=200)
     ap.add_argument("--sims", type=int, default=80)

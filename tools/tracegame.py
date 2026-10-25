@@ -6,6 +6,7 @@ Usage: uv run --python 3.13 python tools/tracegame.py A B N_LOSSES [seed] [--win
 import csv
 import os
 import sys
+from typing import Any
 
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -24,14 +25,14 @@ for r in csv.DictReader(open(os.path.join(REPO, "data", "EN_Card_Data.csv"))):
     pass
 
 
-def nm(cid):
+def nm(cid: int | None) -> str:
     return NAMES.get(cid, f"#{cid}")
 
 
 AREA = {1: "deck", 2: "hand", 3: "discard", 4: "ACTIVE", 5: "bench", 6: "prize", 7: "stadium"}
 
 
-def tell(logs, a_index):
+def tell(logs: list[dict[str, Any]], a_index: int) -> None:
     turn = 0
     prizes = [0, 0]
     for lg in logs:
@@ -66,7 +67,7 @@ def tell(logs, a_index):
             print(f"RESULT winner={w} reason={lg.get('reason')}")
 
 
-def main():
+def main() -> None:
     a_path, b_path, want = sys.argv[1], sys.argv[2], int(sys.argv[3])
     import random
 

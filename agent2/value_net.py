@@ -6,7 +6,9 @@ No torch/sklearn at inference; numpy only. If numpy or the weights file
 is unavailable, OK stays False and callers fall back to the handcrafted eval.
 """
 
+from collections.abc import Sequence
 import os
+from typing import Any
 
 
 OK = False
@@ -18,7 +20,7 @@ except Exception:
     _np = None
 
 
-def load(agent_dir=None):
+def load(agent_dir: str | None = None) -> bool:
     """Load weights; returns True on success. Safe to call more than once."""
     global OK, _W
     if _np is None:
@@ -42,7 +44,7 @@ def load(agent_dir=None):
     return OK
 
 
-def predict(feats):
+def predict(feats: Sequence[float]) -> float:
     """feats: list[float] (len == mean.size). Returns win probability."""
     x = (_np.asarray(feats, dtype=_np.float32) - _W["mean"]) / _W["std"]
     h = x @ _W["W1t"] + _W["b1"]
@@ -56,7 +58,7 @@ def predict(feats):
     return float(e / (1.0 + e))
 
 
-def predict_batch(X):
+def predict_batch(X: Any) -> "_np.ndarray":
     """X: 2d array-like of feature rows. Returns 1d array of probabilities."""
     x = (_np.asarray(X, dtype=_np.float32) - _W["mean"]) / _W["std"]
     h = _np.maximum(x @ _W["W1t"] + _W["b1"], 0.0)

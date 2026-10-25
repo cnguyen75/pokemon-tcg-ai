@@ -51,7 +51,9 @@ DIRS = glob.glob(os.path.join(REPO, "episodes", "daily", "*")) + [
 DIRS = [d for d in DIRS if os.path.isdir(d)]
 
 
-def parse_file(path):
+def parse_file(
+    path: str,
+) -> tuple[list[list[float]], list[list[float]], list[int], list[float]]:
     try:
         d = json.load(open(path))
     except Exception:
@@ -95,7 +97,7 @@ def parse_file(path):
     return Xb, Xc, y, hc
 
 
-def main():
+def main() -> None:
     files = []
     for dp in DIRS:
         files += sorted(glob.glob(os.path.join(dp, "*.json")))

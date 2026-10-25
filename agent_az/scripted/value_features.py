@@ -15,6 +15,7 @@ symmetric my-side/opp-side view from that player's perspective.
 """
 
 import math
+from typing import Any
 
 
 _RAINBOW = 10
@@ -76,7 +77,7 @@ _DISRUPT_IDS = frozenset({1182, 1213, 1244})  # Boss's Orders, Judge, Full Metal
 _FULL_METAL_LAB = 1244
 
 
-def _g(o, k, d=None):
+def _g(o: Any, k: str, d: Any = None) -> Any:
     if isinstance(o, dict):
         v = o.get(k, d)
     else:
@@ -84,7 +85,7 @@ def _g(o, k, d=None):
     return d if v is None else v
 
 
-def _satisfies(attached, cost):
+def _satisfies(attached: list[int], cost: list[int]) -> bool:
     """Can `attached` energy units pay `cost` (0 = colorless)?"""
     pool = list(attached)
     n_colorless = 0
@@ -103,7 +104,7 @@ def _satisfies(attached, cost):
     return len(pool) >= n_colorless
 
 
-def _eff_damage(att_d, def_d, attack):
+def _eff_damage(att_d: Any, def_d: Any, attack: Any) -> int:
     dmg = _g(attack, "damage", 0) or 0
     if att_d is None or def_d is None:
         return dmg
@@ -114,7 +115,7 @@ def _eff_damage(att_d, def_d, attack):
     return dmg
 
 
-def _pyield(d):
+def _pyield(d: Any) -> int:
     if d is None:
         return 1
     if d.megaEx:
@@ -124,7 +125,7 @@ def _pyield(d):
     return 1
 
 
-def _stage(d):
+def _stage(d: Any) -> int:
     if d is None:
         return 0
     if d.stage2:
@@ -134,7 +135,7 @@ def _stage(d):
     return 0
 
 
-def _poke_iter(ps):
+def _poke_iter(ps: Any) -> list[tuple[Any, bool]]:
     """Board pokemon of a player state: (pokemon, is_active)."""
     out = []
     for p in _g(ps, "active", []) or []:
@@ -146,7 +147,9 @@ def _poke_iter(ps):
     return out
 
 
-def _atk_ready_best(p, def_id, CARD, ATK):
+def _atk_ready_best(
+    p: Any, def_id: int, CARD: dict[int, Any], ATK: dict[int, Any]
+) -> tuple[int, int, int]:
     """(ready, best eff dmg vs def_id, min missing energy) for pokemon p."""
     pid = _g(p, "id", 0)
     pd = CARD.get(pid)
@@ -248,11 +251,11 @@ NET_FEATURE_NAMES = FEATURE_NAMES + ["hc_tanh"]
 N_NET_FEATURES = len(NET_FEATURE_NAMES)
 
 
-def hc_squash(hc):
+def hc_squash(hc: float) -> float:
     return math.tanh(hc / HC_SCALE)
 
 
-def _side_feats(ps, opp_active, CARD, ATK):
+def _side_feats(ps: Any, opp_active: Any, CARD: dict[int, Any], ATK: dict[int, Any]) -> list[float]:
     """32 features for one side; opp_active = enemy active pokemon or None."""
     f = []
     prize = _g(ps, "prize", []) or []
@@ -335,7 +338,7 @@ def _side_feats(ps, opp_active, CARD, ATK):
     return f
 
 
-def _opp_seen_ids(op):
+def _opp_seen_ids(op: Any) -> set[int]:
     """Revealed opponent card ids: board pokemon + preEvolution + discard."""
     seen = set()
     for p, _a in _poke_iter(op):
@@ -349,7 +352,7 @@ def _opp_seen_ids(op):
     return seen
 
 
-def detect_archetype(op):
+def detect_archetype(op: Any) -> str:
     """Runtime opponent-archetype detector (observable cards only).
 
     Same flagship-then-early-shell logic as agent2/main.py Policy._archetype,
@@ -366,7 +369,7 @@ def detect_archetype(op):
     return "unknown"
 
 
-def _arch_block(op, cur, me, CARD):
+def _arch_block(op: Any, cur: Any, me: int, CARD: dict[int, Any]) -> list[float]:
     """Opponent (player 1-me) archetype one-hot + capability signals."""
     seen = _opp_seen_ids(op)
     arch = "unknown"
@@ -410,12 +413,12 @@ def _arch_block(op, cur, me, CARD):
     return f
 
 
-def _active_of(ps):
+def _active_of(ps: Any) -> Any:
     a = _g(ps, "active", []) or []
     return a[0] if a else None
 
 
-def extract(cur, me, CARD, ATK):
+def extract(cur: Any, me: int, CARD: dict[int, Any], ATK: dict[int, Any]) -> list[float]:
     """Feature vector (len N_FEATURES) for player `me` given state `cur`."""
     players = _g(cur, "players")
     my, op = players[me], players[1 - me]
@@ -441,14 +444,14 @@ def extract(cur, me, CARD, ATK):
     return f
 
 
-def extract_net(cur, me, CARD, ATK):
+def extract_net(cur: Any, me: int, CARD: dict[int, Any], ATK: dict[int, Any]) -> list[float]:
     """Full net input: base features + squashed handcrafted eval."""
     f = extract(cur, me, CARD, ATK)
     f.append(hc_squash(handcrafted_eval(cur, me)))
     return f
 
 
-def handcrafted_eval(cur, me):
+def handcrafted_eval(cur: Any, me: int) -> float:
     """Static replica of main.py eval_world (base prizes = 6): AUC baseline."""
     result = _g(cur, "result", -1)
     if result >= 0:

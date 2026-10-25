@@ -40,7 +40,9 @@ OPT_TYPE_NAMES = {
 }
 
 
-def by_episode_split(ep, frac=0.2, seed=0):
+def by_episode_split(
+    ep: np.ndarray, frac: float = 0.2, seed: int = 0
+) -> tuple[np.ndarray, np.ndarray]:
     rng = np.random.RandomState(seed)
     uep = np.unique(ep)
     rng.shuffle(uep)
@@ -50,7 +52,7 @@ def by_episode_split(ep, frac=0.2, seed=0):
     return np.where(~is_te)[0], np.where(is_te)[0]
 
 
-def main():
+def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--epochs", type=int, default=40)
     ap.add_argument("--dmodel", type=int, default=256)
@@ -102,7 +104,7 @@ def main():
     # representative of the states the shared torso must judge); both heads then
     # see one input distribution.
 
-    def build_pol(dec_ids):
+    def build_pol(dec_ids: np.ndarray) -> tuple[torch.Tensor, ...]:
         N = len(dec_ids)
         Xo = np.zeros((N, M, Dopt), dtype=np.float32)
         Xs = np.zeros((N, Dstate), dtype=np.float32)
@@ -155,7 +157,7 @@ def main():
     )
     opt = torch.optim.Adam(net.parameters(), lr=args.lr, weight_decay=1e-5)
 
-    def eval_policy():
+    def eval_policy() -> tuple[float, float]:
         net.eval()
         with torch.no_grad():
             logits = net.policy_logits_from_h(net.encode(Xs_te), Xo_te, Mk_te)
@@ -165,7 +167,7 @@ def main():
             t3 = (order[:, :3] == C[:, None]).any(1).float().mean().item()
         return t1, t3
 
-    def eval_value():
+    def eval_value() -> tuple[float, float]:
         net.eval()
         with torch.no_grad():
             p = torch.sigmoid(net.value_logit(Xv_te)).cpu().numpy()

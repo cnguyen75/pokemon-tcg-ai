@@ -13,6 +13,7 @@ import csv
 import json
 import os
 import time
+from typing import Any
 import urllib.request
 
 
@@ -30,7 +31,7 @@ for r in csv.DictReader(open(os.path.join(ROOT, "data", "EN_Card_Data.csv"))):
     CATEGORY.setdefault(cid, r.get("Stage (Pokémon)/Type (Energy and Trainer)", ""))
 
 
-def _post(path, body):
+def _post(path: str, body: dict[str, Any]) -> dict[str, Any]:
     req = urllib.request.Request(
         f"{API}/{path}",
         data=json.dumps(body).encode(),
@@ -40,7 +41,7 @@ def _post(path, body):
         return json.load(f)
 
 
-def archetype(deck):
+def archetype(deck: list[int]) -> str:
     from collections import Counter
 
     poke = Counter()
@@ -52,7 +53,7 @@ def archetype(deck):
     return " / ".join(sorted(tops)) if tops else "?"
 
 
-def main():
+def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("submission_id", type=int)
     ap.add_argument("--max", type=int, default=200)

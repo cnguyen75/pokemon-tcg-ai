@@ -47,11 +47,11 @@ POKE = {
 }
 
 
-def nm(cid):
+def nm(cid: int | None) -> str:
     return NAMES.get(cid, f"#{cid}")
 
 
-def main():
+def main() -> None:
     a_path, b_path, n = sys.argv[1], sys.argv[2], int(sys.argv[3])
     import random
 

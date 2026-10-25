@@ -13,6 +13,7 @@ import glob
 import json
 import os
 import sys
+from typing import Any
 
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -25,11 +26,11 @@ for r in csv.DictReader(open(os.path.join(ROOT, "data", "EN_Card_Data.csv"))):
     CAT.setdefault(cid, r.get("Stage (Pokémon)/Type (Energy and Trainer)", ""))
 
 
-def nm(cid):
+def nm(cid: int) -> str:
     return NAMES.get(cid, f"#{cid}")
 
 
-def game_logs(d, my_idx):
+def game_logs(d: dict[str, Any], my_idx: int) -> list[dict[str, Any]]:
     """My agent's full log stream: per-step DELTAS, concatenated."""
     logs = []
     for step in d["steps"]:
@@ -38,7 +39,7 @@ def game_logs(d, my_idx):
     return logs
 
 
-def main():
+def main() -> None:
     key = sys.argv[1]
     agg = {"W": Counter(), "L": Counter()}
     games = {"W": 0, "L": 0}

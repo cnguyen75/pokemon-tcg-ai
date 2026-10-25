@@ -11,8 +11,10 @@ train/ at inference time. Kept byte-for-byte equivalent to extract_policy so the
 mined policy.npz option rows and the live inference rows are the same distribution.
 """
 
+from collections.abc import Sequence
 import os
 import sys
+from typing import Any
 
 
 _REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -30,7 +32,7 @@ D_OPT = 38
 D_STATE = vf.N_NET_FEATURES  # 101
 
 
-def _g(o, k, d=None):
+def _g(o: Any, k: str, d: Any = None) -> Any:
     if isinstance(o, dict):
         v = o.get(k, d)
     else:
@@ -38,7 +40,14 @@ def _g(o, k, d=None):
     return d if v is None else v
 
 
-def _card_at(cur_players, me, area, index, playerIndex, CARD):
+def _card_at(
+    cur_players: Sequence[Any],
+    me: int,
+    area: AreaType | int,
+    index: int,
+    playerIndex: int | None,
+    CARD: dict[int, Any],
+) -> Any:
     pi = playerIndex if playerIndex is not None else me
     try:
         pl = cur_players[pi]
@@ -56,7 +65,7 @@ def _card_at(cur_players, me, area, index, playerIndex, CARD):
     return None
 
 
-def _card_static(cid, CARD):
+def _card_static(cid: int, CARD: dict[int, Any]) -> list[float]:
     d = CARD.get(cid)
     if d is None:
         return [0.0] * 13
@@ -78,7 +87,9 @@ def _card_static(cid, CARD):
     ]
 
 
-def option_features(o, cur, me, CARD, ATK):
+def option_features(
+    o: Any, cur: Any, me: int, CARD: dict[int, Any], ATK: dict[int, Any]
+) -> list[float]:
     """38-dim feature vector for one legal option. Works on replay dicts
     (training) or cg.api dataclasses (inference)."""
     t = int(_g(o, "type", -1))
@@ -134,6 +145,6 @@ def option_features(o, cur, me, CARD, ATK):
     return f  # 38
 
 
-def state_features(cur, me, CARD, ATK):
+def state_features(cur: Any, me: int, CARD: dict[int, Any], ATK: dict[int, Any]) -> list[float]:
     """101-dim state feature vector (value_features.extract_net)."""
     return vf.extract_net(cur, me, CARD, ATK)

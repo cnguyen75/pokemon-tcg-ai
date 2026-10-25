@@ -15,11 +15,13 @@ Design:
 """
 
 from collections import Counter
+from collections.abc import Collection, Sequence
 import math
 import os
 import random
 import sys
 import time
+from typing import Any
 
 
 # kaggle_environments exec()s this file, so __file__ may not exist
@@ -62,7 +64,7 @@ except Exception:
 # ------------------------------------------------------------ deck config
 
 
-def _load_configs():
+def _load_configs() -> dict[str, dict[str, Any]]:
     ns = {}
     path = os.path.join(AGENT_DIR, "deck_configs.py")
     with open(path, encoding="utf-8") as f:
@@ -127,7 +129,7 @@ _ARCH_EARLY = [
 ]
 
 
-def prize_yield(cid):
+def prize_yield(cid: int) -> int:
     d = CARD.get(cid)
     if d is None:
         return 1
@@ -138,7 +140,7 @@ def prize_yield(cid):
     return 1
 
 
-def energy_units(cid, target_basic):
+def energy_units(cid: int, target_basic: bool) -> list[int]:
     """Energy units a hand card provides when attached to a Pokemon."""
     d = CARD.get(cid)
     if d is None:
@@ -150,7 +152,7 @@ def energy_units(cid, target_basic):
     return [0]
 
 
-def satisfies(attached, cost):
+def satisfies(attached: Sequence[int], cost: Sequence[int]) -> bool:
     """Can `attached` energy units pay `cost` (0 = colorless)?"""
     pool = list(attached)
     n_colorless = 0
@@ -169,7 +171,7 @@ def satisfies(attached, cost):
     return len(pool) >= n_colorless
 
 
-def eff_damage(att_id, def_id, attack):
+def eff_damage(att_id: int, def_id: int, attack: Any) -> int:
     dmg = attack.damage or 0
     if attack.attackId in PIERCE_ATTACKS:
         return dmg
@@ -202,7 +204,7 @@ class Plan:
         "retreat_fuel",
     )
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.attacker_bi = -1
         self.target_bi = -1
         self.attack_id = -1
@@ -287,7 +289,7 @@ if VALUE_NET_ON:
 
 
 # search instrumentation (per game; printed on reset when CG_A2_DEBUG)
-def _fresh_stats():
+def _fresh_stats() -> dict[str, Any]:
     return {
         "searches": 0,
         "t": 0.0,
@@ -312,7 +314,7 @@ _S = _fresh_stats()
 _MERGED_CFG = {}
 
 
-def _merged_cfg(cfg, arch, ov):
+def _merged_cfg(cfg: dict[str, Any], arch: str, ov: dict[str, Any]) -> dict[str, Any]:
     """cfg with per-matchup overrides applied (dict keys merge, others replace)."""
     key = (id(cfg), arch)
     m = _MERGED_CFG.get(key)
@@ -329,7 +331,7 @@ def _merged_cfg(cfg, arch, ov):
     return m
 
 
-def get_card(obs, area, index, player_index):
+def get_card(obs: Observation, area: AreaType, index: int, player_index: int) -> Any:
     try:
         pl = obs.current.players[player_index]
         if area == AreaType.DECK:
@@ -354,7 +356,7 @@ def get_card(obs, area, index, player_index):
 
 
 class Policy:
-    def __init__(self, obs, cfg=None):
+    def __init__(self, obs: Observation, cfg: dict[str, Any] | None = None) -> None:
         self.obs = obs
         self.state = obs.current
         self.sel = obs.select
@@ -385,7 +387,7 @@ class Policy:
 
     # ------------------------------------------------------- bookkeeping
 
-    def _archetype(self):
+    def _archetype(self) -> str:
         seen = set()
         for p in self.op_board:
             if p is None:
@@ -405,7 +407,7 @@ class Policy:
                 return name
         return _G["arch"] if _G["arch"] != "unknown" else "unknown"
 
-    def _visible_own(self):
+    def _visible_own(self) -> Counter[int]:
         seen = Counter()
         for c in self.my.hand or []:
             if c is not None:
@@ -432,22 +434,22 @@ class Policy:
                 seen[c.id] += 1
         return seen
 
-    def copies_hidden(self, cid):
+    def copies_hidden(self, cid: int) -> int:
         """Copies of cid still in our deck or facedown prizes."""
         return max(DECK_TOTAL.get(cid, 0) - self._visible_seen.get(cid, 0), 0)
 
-    def line_count(self, base_id):
+    def line_count(self, base_id: int) -> int:
         line = self.cfg["lines"].get(base_id, (base_id,))
         return sum(self.field_counts.get(i, 0) for i in line)
 
-    def line_cap_ok(self, cid):
+    def line_cap_ok(self, cid: int) -> bool:
         """True if we still want another copy of this line in play."""
         for base, line in self.cfg["lines"].items():
             if cid in line:
                 return self.line_count(base) < self.cfg["bench_cap"].get(base, 1)
         return sum(self.field_counts.values()) < 4
 
-    def opp_ability_count(self):
+    def opp_ability_count(self) -> int:
         n = 0
         for p in self.op_board:
             if p is None:
@@ -457,12 +459,12 @@ class Policy:
                 n += 1
         return n
 
-    def my_damage_total(self):
+    def my_damage_total(self) -> int:
         return sum((p.maxHp - p.hp) for p in self.my_board if p is not None)
 
     # ------------------------------------------------------- attack planner
 
-    def plan_attack(self, exclude=()):
+    def plan_attack(self, exclude: Collection[tuple[int, int, int]] = ()) -> Plan:
         plan = Plan()
         boss_ok = self.hand_counts.get(BOSS, 0) > 0 and self.supporter_ok
         # can we unlock a retreat by attaching one energy to the active?
@@ -582,7 +584,7 @@ class Policy:
 
     # ------------------------------------------------------- need scoring
 
-    def need_score(self, cid):
+    def need_score(self, cid: int) -> float:
         """How much we want this card in hand right now."""
         d = CARD.get(cid)
         if d is None:
@@ -655,7 +657,7 @@ class Policy:
 
     # ------------------------------------------------------- MAIN scoring
 
-    def sc_ability(self, o):
+    def sc_ability(self, o: Any) -> int:
         card = get_card(
             self.obs, o.area, o.index, o.playerIndex if o.playerIndex is not None else self.me
         )
@@ -670,7 +672,7 @@ class Policy:
             return 20000 if self.my_damage_total() > 0 else -1
         return 19000
 
-    def sc_play(self, o):
+    def sc_play(self, o: Any) -> float:
         card = get_card(self.obs, AreaType.HAND, o.index, self.me)
         if card is None:
             return 0
@@ -780,7 +782,7 @@ class Policy:
             return 9200 if best > 35 else -1
         return 9800  # unknown item: probably fine to play
 
-    def sc_supporter(self, cid):
+    def sc_supporter(self, cid: int) -> float:
         plan = _G["plan"]
         if cid == BOSS:
             return 15000 if plan.needs_gust else -1
@@ -840,7 +842,7 @@ class Policy:
             return max(base - 1400 * useful, -1)
         return self.cfg.get("supporter_base", {}).get(cid, 5000)
 
-    def _hand_useful(self):
+    def _hand_useful(self) -> int:
         n = 0
         for cid, cnt in self.hand_counts.items():
             d = CARD.get(cid)
@@ -859,7 +861,7 @@ class Policy:
                 n += 1
         return n
 
-    def sc_attach(self, o):
+    def sc_attach(self, o: Any) -> int:
         card = get_card(self.obs, o.area, o.index, self.me)
         target = get_card(self.obs, o.inPlayArea, o.inPlayIndex, self.me)
         if card is None or not isinstance(target, Pokemon):
@@ -905,7 +907,7 @@ class Policy:
                 return 150 - pos
         return 100
 
-    def sc_evolve(self, o):
+    def sc_evolve(self, o: Any) -> float:
         card = get_card(self.obs, o.area, o.index, self.me)
         target = get_card(self.obs, o.inPlayArea, o.inPlayIndex, self.me)
         cid = getattr(card, "id", 0)
@@ -925,7 +927,7 @@ class Policy:
             s += 20
         return s
 
-    def sc_attack(self, o):
+    def sc_attack(self, o: Any) -> float:
         plan = _G["plan"]
         if plan.score > 0:
             if plan.needs_energy or plan.needs_gust or plan.needs_switch or plan.retreat_fuel:
@@ -951,7 +953,7 @@ class Policy:
 
     # ------------------------------------------------------- card contexts
 
-    def sc_card(self, o):
+    def sc_card(self, o: Any) -> float:
         card = get_card(
             self.obs, o.area, o.index, o.playerIndex if o.playerIndex is not None else self.me
         )
@@ -1026,7 +1028,7 @@ class Policy:
         # unknown card context: mildly prefer cards we value
         return self.need_score(getattr(card, "id", 0)) * 0.1 + 1
 
-    def sc_promote(self, o, card):
+    def sc_promote(self, o: Any, card: Any) -> float:
         """SWITCH / TO_ACTIVE: our promote or opponent gust target."""
         plan = _G["plan"]
         if o.playerIndex is not None and o.playerIndex != self.me:
@@ -1063,7 +1065,7 @@ class Policy:
         s += card.hp * 0.15  # sturdier promotes bleed fewer prizes
         return s
 
-    def sc_damage_target(self, o, card):
+    def sc_damage_target(self, o: Any, card: Any) -> float:
         if not isinstance(card, Pokemon):
             return 0
         if o.playerIndex == self.me:
@@ -1084,7 +1086,7 @@ class Policy:
 
     # ------------------------------------------------------- other types
 
-    def sc_attached(self, o):
+    def sc_attached(self, o: Any) -> float:
         """TOOL_CARD / ENERGY_CARD options (e.g. Crushing Hammer target)."""
         holder = get_card(self.obs, o.area, o.index, o.playerIndex)
         if o.playerIndex is not None and o.playerIndex != self.me:
@@ -1109,7 +1111,7 @@ class Policy:
             return 60
         return 10
 
-    def sc_energy(self, o):
+    def sc_energy(self, o: Any) -> int:
         """SelectType.ENERGY options (retreat cost, discard effects)."""
         holder = get_card(self.obs, o.area, o.index, o.playerIndex)
         if o.playerIndex is not None and o.playerIndex != self.me:
@@ -1127,7 +1129,7 @@ class Policy:
             return 60
         return 10
 
-    def sc_yes(self):
+    def sc_yes(self) -> int:
         ctx = self.ctx
         if ctx == SelectContext.IS_FIRST:
             return IS_FIRST_YES
@@ -1146,7 +1148,7 @@ class Policy:
             return -10 if has_starter else 100
         return 50  # ACTIVATE / FIRST_EFFECT / COIN_HEAD: default yes
 
-    def sc_number(self, o):
+    def sc_number(self, o: Any) -> int:
         n = o.number or 0
         if self.ctx == SelectContext.DRAW_COUNT:
             if self.my.deckCount - n < 1:
@@ -1156,7 +1158,7 @@ class Policy:
 
     # ------------------------------------------------------- dispatch
 
-    def score_option(self, o):
+    def score_option(self, o: Any) -> float:
         t = o.type
         if t == OptionType.NUMBER:
             return self.sc_number(o)
@@ -1204,7 +1206,7 @@ class Policy:
         SelectContext.DISCARD_TOOL_CARD,
     }
 
-    def choose(self):
+    def choose(self) -> list[int]:
         sel = self.sel
         n = len(sel.option)
         if n == 0 or sel.maxCount == 0:
@@ -1249,7 +1251,7 @@ class Policy:
 
     # ---------------------------------------------- pivotal candidate sets
 
-    def _jit_attack_ready(self, o):
+    def _jit_attack_ready(self, o: Any) -> bool:
         """Would the evolved active be able to attack immediately?"""
         if o.inPlayArea != AreaType.ACTIVE:
             return False
@@ -1268,7 +1270,9 @@ class Policy:
                 return True
         return False
 
-    def _search_candidates(self, scores, order):
+    def _search_candidates(
+        self, scores: list[float], order: list[int]
+    ) -> tuple[str | None, list[int] | None]:
         """Return (class, option indices) worth a determinized search.
 
         Only pivotal single-pick decision classes are searched. Candidates
@@ -1364,7 +1368,7 @@ class Policy:
             return "hammer", (cands if len(cands) >= 2 else None)
         return None, None
 
-    def beam_children(self, b):
+    def beam_children(self, b: int) -> list[list[int]]:
         """Top-b next-action choices from THIS select, for the beam expander.
 
         Returns a list of `select` lists (each a valid argument to
@@ -1392,7 +1396,7 @@ class Policy:
 
     # ------------------------------------------------------- lethal verify
 
-    def maybe_verify_lethal(self):
+    def maybe_verify_lethal(self) -> None:
         global IN_VERIFY
         plan = _G["plan"]
         if IN_VERIFY or not SEARCH_OK or not plan.wins or not plan.needs_gust:
@@ -1420,7 +1424,7 @@ class Policy:
 # ------------------------------------------------------------ search world
 
 
-def sample_own_hidden(obs, me):
+def sample_own_hidden(obs: Observation, me: int) -> tuple[list[int], list[int]]:
     ps = obs.current.players[me]
     unseen = Counter(DECK)
     seen = Counter()
@@ -1459,7 +1463,7 @@ def sample_own_hidden(obs, me):
     return pool[:n_deck], pool[n_deck : n_deck + n_prize]
 
 
-def _opp_energy_id(obs, me):
+def _opp_energy_id(obs: Observation, me: int) -> int | None:
     """Most common basic-energy card the opponent has revealed, if any."""
     ps = obs.current.players[1 - me]
     cnt = Counter()
@@ -1478,7 +1482,9 @@ def _opp_energy_id(obs, me):
     return cnt.most_common(1)[0][0] if cnt else None
 
 
-def begin_world(obs, me, manual_coin=False, opp_energy=False):
+def begin_world(
+    obs: Observation, me: int, manual_coin: bool = False, opp_energy: bool = False
+) -> Any:
     ps_opp = obs.current.players[1 - me]
     your_deck, your_prize = sample_own_hidden(obs, me)
     opp_active = []
@@ -1509,7 +1515,7 @@ def begin_world(obs, me, manual_coin=False, opp_energy=False):
     )
 
 
-def _fallback_choice(sel):
+def _fallback_choice(sel: Any) -> list[int]:
     n = len(sel.option)
     lo = max(sel.minCount, 0)
     if n == 0:
@@ -1517,7 +1523,7 @@ def _fallback_choice(sel):
     return list(range(min(max(lo, 1), n)))
 
 
-def verify_win(obs, me, worlds=3, budget=1.2):
+def verify_win(obs: Observation, me: int, worlds: int = 3, budget: float = 1.2) -> bool:
     """Determinized check: does executing our policy this turn win the game?"""
     t0 = time.time()
     wins = tried = 0
@@ -1559,7 +1565,7 @@ def verify_win(obs, me, worlds=3, budget=1.2):
 # ------------------------------------------------------- pivotal search
 
 
-def eval_world(cur, me, base_my_pr, base_op_pr):
+def eval_world(cur: Any, me: int, base_my_pr: int, base_op_pr: int) -> float:
     """Score a rollout endpoint from our perspective."""
     if cur.result >= 0:
         if VN_OK:
@@ -1606,7 +1612,15 @@ def eval_world(cur, me, base_my_pr, base_op_pr):
     return s
 
 
-def rollout_value(st, me, horizon, base_my_pr, base_op_pr, deadline, coin_budget):
+def rollout_value(
+    st: Any,
+    me: int,
+    horizon: int,
+    base_my_pr: int,
+    base_op_pr: int,
+    deadline: float,
+    coin_budget: int,
+) -> float | None:
     """Roll a world to `horizon` with the policy on both sides.
 
     First coin flip is expanded expectimax-style (both outcomes, 0.5 weight);
@@ -1653,7 +1667,7 @@ def rollout_value(st, me, horizon, base_my_pr, base_op_pr, deadline, coin_budget
     return eval_world(st.observation.current, me, base_my_pr, base_op_pr)
 
 
-def _beam_kind(st, me, start_turn):
+def _beam_kind(st: Any, me: int, start_turn: int) -> str:
     """Classify a beam node: 'live' (our turn continues, expand it),
     'endturn' (turn passed to opp), 'coin' (our coin flip -> hand to the
     expectimax rollout), 'result' (game over), 'dead' (no options)."""
@@ -1671,8 +1685,15 @@ def _beam_kind(st, me, start_turn):
 
 
 def beam_turn_value(
-    root_id, first_choice, me, start_turn, horizon, base_my_pr, base_op_pr, deadline
-):
+    root_id: Any,
+    first_choice: list[int],
+    me: int,
+    start_turn: int,
+    horizon: int,
+    base_my_pr: int,
+    base_op_pr: int,
+    deadline: float,
+) -> float | None:
     """Beam-search OUR remaining turn after `first_choice`, then model the
     opponent's reply with the policy to `horizon`; return our best achievable
     leaf value (max over our action sequences, opponent fixed-policy).
@@ -1754,7 +1775,7 @@ def beam_turn_value(
     return best
 
 
-def det_search(pol, cands):
+def det_search(pol: Policy, cands: list[int]) -> int | None:
     """Determinized paired-world search over candidate first-selections.
 
     Per world, each candidate first-move gets a within-turn beam (BEAM_ON) that
@@ -1834,7 +1855,7 @@ def det_search(pol, cands):
     return cands[best]
 
 
-def run_search(pol, cands):
+def run_search(pol: Policy, cands: list[int]) -> int | None:
     """Gate + wrap det_search: budgets, matchup gates, state save/restore."""
     global IN_VERIFY
     if IN_VERIFY or not SEARCH_OK or pol.obs.search_begin_input is None:
@@ -1864,7 +1885,7 @@ def run_search(pol, cands):
 # ------------------------------------------------------------ entry point
 
 
-def _game_reset():
+def _game_reset() -> None:
     if DEBUG and _S["moves"]:
         n = max(_S["searches"], 1)
         lines = max(_S["lines"], 1)

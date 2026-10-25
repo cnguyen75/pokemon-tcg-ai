@@ -28,6 +28,7 @@ import math
 import os
 import sys
 import time
+from typing import Any
 
 
 AGENT_DIR = "/kaggle_simulations/agent"
@@ -123,7 +124,7 @@ PANIC_RESERVE = 60.0
 _STATS = {"moves": 0, "sims": 0, "search_moves": 0, "t": 0.0, "max_move": 0.0, "fallbacks": 0}
 
 
-def _is_main_pick(sel):
+def _is_main_pick(sel: Any) -> bool:
     return (
         sel is not None
         and sel.type == int(SelectType.MAIN)
@@ -133,7 +134,7 @@ def _is_main_pick(sel):
     )
 
 
-def _fallback_choice(sel):
+def _fallback_choice(sel: Any) -> list[int]:
     n = len(sel.option or [])
     lo = max(sel.minCount, 0)
     if n == 0:
@@ -141,7 +142,7 @@ def _fallback_choice(sel):
     return list(range(min(max(lo, 1), n)))
 
 
-def _net_eval(cur, me, options):
+def _net_eval(cur: Any, me: int, options: list[Any]) -> tuple[np.ndarray, float]:
     """(prior over options np(K,), value in [0,1]) from the shared net."""
     xs = np.asarray(feats.state_features(cur, me, CARD, ATK), dtype=np.float32)
     xs = (xs - _NORM["s_mu"]) / _NORM["s_sd"]
@@ -159,26 +160,26 @@ def _net_eval(cur, me, options):
 class Node:
     __slots__ = ("P", "N", "W", "n_opts")
 
-    def __init__(self, prior, n_opts):
+    def __init__(self, prior: np.ndarray, n_opts: int) -> None:
         self.P = prior  # np(K,) prior over options
         self.N = np.zeros(n_opts, dtype=np.float64)  # visit count / child
         self.W = np.zeros(n_opts, dtype=np.float64)  # total value / child
         self.n_opts = n_opts
 
-    def select(self):
+    def select(self) -> int:
         q = np.where(self.N > 0, self.W / np.maximum(self.N, 1), 0.0)
         u = C_PUCT * self.P * math.sqrt(self.N.sum() + 1.0) / (1.0 + self.N)
         return int(np.argmax(q + u))
 
 
-def _scripted_choice(obs):
+def _scripted_choice(obs: Any) -> list[int]:
     try:
         return Policy(obs).choose()
     except Exception:
         return _fallback_choice(obs.select)
 
 
-def _advance_to_our_main(st, me, root_turn, deadline):
+def _advance_to_our_main(st: Any, me: int, root_turn: int, deadline: float) -> tuple[Any, str]:
     """From search state `st`, keep stepping with the scripted policy until we
     reach OUR MAIN pick, a turn advance past the rollout horizon, or terminal.
     Returns (st, kind) with kind in {'main','end','terminal','dead'}."""
@@ -203,7 +204,14 @@ def _advance_to_our_main(st, me, root_turn, deadline):
     return st, "end"
 
 
-def _simulate(root_obs, me, root_opts, root_node, tree, deadline):
+def _simulate(
+    root_obs: Any,
+    me: int,
+    root_opts: list[Any],
+    root_node: Node,
+    tree: dict[tuple[int, ...], Node],
+    deadline: float,
+) -> None:
     """One determinized MCTS simulation from a freshly sampled world."""
     try:
         st = begin_world(root_obs, me, manual_coin=False, opp_energy=True)
@@ -268,7 +276,7 @@ def _simulate(root_obs, me, root_opts, root_node, tree, deadline):
         nd.W[a] += v
 
 
-def mcts_run(obs, me):
+def mcts_run(obs: Any, me: int) -> tuple[Node, np.ndarray, int]:
     """Run determinized PUCT-MCTS at a MAIN node. Returns (root, prior, sims).
     root.N holds the per-option visit counts (the improved policy target)."""
     t0 = time.time()
@@ -293,7 +301,7 @@ def mcts_run(obs, me):
     return root, prior, sims
 
 
-def mcts_choice(obs, me):
+def mcts_choice(obs: Any, me: int) -> list[int]:
     """Return [best MAIN option index] via determinized PUCT-MCTS."""
     try:
         root, prior, _ = mcts_run(obs, me)
@@ -311,7 +319,7 @@ def mcts_choice(obs, me):
 _G = {"move_t0": 0.0, "turn": -99}
 
 
-def _game_reset():
+def _game_reset() -> None:
     _G["turn"] = -99
 
 

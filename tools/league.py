@@ -13,13 +13,14 @@ import os
 import random
 import sys
 import time
+from types import ModuleType
 
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CG_HOME = os.path.join(REPO, "data", "sample_submission", "sample_submission")
 
 
-def load_agent(path):
+def load_agent(path: str) -> ModuleType:
     path = os.path.abspath(path)
     # purge agent-local helper modules so each agent imports its OWN copies
     # (agent2 and baselines/v5 both ship value_net.py; a cached module would
@@ -45,7 +46,7 @@ def load_agent(path):
     return mod
 
 
-def play_games(args):
+def play_games(args: tuple[str, str, int, int]) -> tuple[list[int], float]:
     a_path, b_path, n_games, seed = args
     sys.path.insert(0, CG_HOME)
     from cg.game import battle_finish, battle_select, battle_start
@@ -80,7 +81,7 @@ def play_games(args):
     return results, time.time() - t0
 
 
-def wilson(w, n, z=1.96):
+def wilson(w: int, n: int, z: float = 1.96) -> tuple[float, float, float]:
     if n == 0:
         return 0, 0, 0
     p = w / n
@@ -90,7 +91,7 @@ def wilson(w, n, z=1.96):
     return p, center - rad, center + rad
 
 
-def main():
+def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("agent_a")
     ap.add_argument("agent_b")

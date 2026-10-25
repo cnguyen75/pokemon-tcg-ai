@@ -30,12 +30,12 @@ OPT_TYPE_NAMES = {
 }
 
 
-def load():
+def load() -> tuple[np.ndarray, ...]:
     d = np.load(os.path.join(REPO, "train", "data", "policy.npz"))
     return (d["X_opt"], d["X_state"], d["offs"], d["chosen"], d["script"], d["ep"], d["dtype_"])
 
 
-def main():
+def main() -> None:
     import torch
     import torch.nn as nn
 
@@ -73,7 +73,7 @@ def main():
     sizes = np.array([offs[di + 1] - offs[di] for di in range(n_dec)])
     M = int(sizes.max())
 
-    def build(dec_ids):
+    def build(dec_ids: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         N = len(dec_ids)
         Xp = np.zeros((N, M, D), dtype=np.float32)
         mask = np.zeros((N, M), dtype=np.float32)
@@ -96,7 +96,7 @@ def main():
     Mte_t = torch.tensor(Mte, device=dev)
 
     class Net(nn.Module):
-        def __init__(self, d, h=64):
+        def __init__(self, d: int, h: int = 64) -> None:
             super().__init__()
             self.net = nn.Sequential(
                 nn.Linear(d, h),
@@ -107,13 +107,13 @@ def main():
                 nn.Linear(h, 1),
             )
 
-        def forward(self, x):
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
             return self.net(x).squeeze(-1)
 
     net = Net(D).to(dev)
     opt = torch.optim.Adam(net.parameters(), lr=2e-3, weight_decay=1e-5)
 
-    def eval_split(X, Mk, C):
+    def eval_split(X: torch.Tensor, Mk: torch.Tensor, C: np.ndarray) -> tuple[float, float]:
         net.eval()
         with torch.no_grad():
             s = net(X) + (Mk - 1.0) * 1e9
@@ -177,7 +177,7 @@ def main():
     print(f"wrote {out}", flush=True)
 
     # ---- verify numpy forward matches torch on held-out ----
-    def np_fwd(Xrows):
+    def np_fwd(Xrows: np.ndarray) -> np.ndarray:
         x = (Xrows - mu) / sd
         h = np.maximum(x @ W1.T + b1, 0.0)
         h = np.maximum(h @ W2.T + b2, 0.0)

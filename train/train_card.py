@@ -10,6 +10,7 @@ Metrics: pooled AUC + per-episode AUC (paired t-stat, win%), permutation
 importance of card-feature groups, inference cost.
 """
 
+from collections.abc import Callable
 import copy
 import os
 import sys
@@ -30,7 +31,7 @@ EPOCHS = int(os.environ.get("CARD_EPOCHS", "20"))
 SHIPPED = os.path.join(REPO, "agent2", "value_net.npz")
 
 
-def auc(y, s):
+def auc(y: np.ndarray, s: np.ndarray) -> float:
     order = np.argsort(s, kind="mergesort")
     ranks = np.empty(len(s), dtype=np.float64)
     ranks[order] = np.arange(1, len(s) + 1)
@@ -50,12 +51,14 @@ def auc(y, s):
     return (ranks[y == 1].sum() - n1 * (n1 + 1) / 2) / (n1 * n0)
 
 
-def logloss(y, p):
+def logloss(y: np.ndarray, p: np.ndarray) -> float:
     p = np.clip(p, 1e-7, 1 - 1e-7)
     return float(-(y * np.log(p) + (1 - y) * np.log(1 - p)).mean())
 
 
-def split_by_episode(ep, rng, frac):
+def split_by_episode(
+    ep: np.ndarray, rng: np.random.Generator, frac: float
+) -> tuple[np.ndarray, np.ndarray]:
     uniq = np.unique(ep)
     rng.shuffle(uniq)
     n_hold = max(int(len(uniq) * frac), 1)
@@ -64,7 +67,7 @@ def split_by_episode(ep, rng, frac):
     return ~mask, mask
 
 
-def shipped_predict(path, Xraw):
+def shipped_predict(path: str, Xraw: np.ndarray) -> np.ndarray:
     z = np.load(path)
     x = (Xraw.astype(np.float64) - z["mean"]) / z["std"]
     i = 1
@@ -75,7 +78,7 @@ def shipped_predict(path, Xraw):
     return 1.0 / (1.0 + np.exp(-logits))
 
 
-def build_mlp(indim, arch, dropout):
+def build_mlp(indim: int, arch: list[int], dropout: float) -> nn.Sequential:
     layers, prev = [], indim
     for h in arch:
         layers += [nn.Linear(prev, h), nn.ReLU(), nn.Dropout(dropout)]
@@ -84,7 +87,17 @@ def build_mlp(indim, arch, dropout):
     return nn.Sequential(*layers)
 
 
-def train_mlp(Xtr, ytr, Xva, yva, arch, dropout, epochs, tag, wd=3e-4):
+def train_mlp(
+    Xtr: np.ndarray,
+    ytr: np.ndarray,
+    Xva: np.ndarray,
+    yva: np.ndarray,
+    arch: list[int],
+    dropout: float,
+    epochs: int,
+    tag: str,
+    wd: float = 3e-4,
+) -> tuple[nn.Sequential, np.ndarray, np.ndarray, Callable[..., np.ndarray]]:
     mean = Xtr.mean(axis=0)
     std = Xtr.std(axis=0)
     std[std < 1e-6] = 1.0
@@ -99,7 +112,7 @@ def train_mlp(Xtr, ytr, Xva, yva, arch, dropout, epochs, tag, wd=3e-4):
     n = len(yt)
     bs = 8192
 
-    def predict(Xn, m=None):
+    def predict(Xn: np.ndarray, m: nn.Module | None = None) -> np.ndarray:
         m = m or model
         m.eval()
         with torch.no_grad():
@@ -135,7 +148,7 @@ def train_mlp(Xtr, ytr, Xva, yva, arch, dropout, epochs, tag, wd=3e-4):
     return model, mean, std, predict
 
 
-def main():
+def main() -> None:
     rng = np.random.default_rng(SEED)
     torch.manual_seed(SEED)
     d = np.load(os.path.join(DATA, "episodes_card.npz"))
@@ -166,7 +179,7 @@ def main():
     hcho = hc[ho]
     epho = ep[ho]
 
-    def per_ep_auc_mean(p):
+    def per_ep_auc_mean(p: np.ndarray) -> float:
         vals = []
         seen = {}
         for i, e in enumerate(ep[va]):
@@ -239,7 +252,7 @@ def main():
         by.setdefault(e, []).append(i)
     by = {e: np.asarray(v) for e, v in by.items()}
 
-    def per_ep(p):
+    def per_ep(p: np.ndarray) -> dict[int, float]:
         out = []
         for e, idx in by.items():
             yy = yho[idx]
@@ -263,7 +276,7 @@ def main():
     print(f"  ship   {a_ship.mean():.4f}")
     print(f"  hc     {a_hc.mean():.4f}")
 
-    def paired(a, b, la, lb):
+    def paired(a: np.ndarray, b: np.ndarray, la: str, lb: str) -> None:
         dd = a - b
         t = dd.mean() / (dd.std(ddof=1) / np.sqrt(len(dd)) + 1e-12)
         print(

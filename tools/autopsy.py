@@ -16,11 +16,11 @@ for r in csv.DictReader(open(os.path.join(ROOT, "data", "EN_Card_Data.csv"))):
 attacks = {}  # attackId -> name filled lazily from cg if available
 
 
-def nm(cid):
+def nm(cid: int | None) -> str:
     return names.get(cid, f"#{cid}")
 
 
-def main():
+def main() -> None:
     path = sys.argv[1]
     d = json.load(open(path))
     teams = d["info"]["TeamNames"]

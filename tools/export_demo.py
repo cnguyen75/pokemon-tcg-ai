@@ -12,12 +12,15 @@ card and the cards beneath it all move to the discard pile). Needs no engine.
 from datetime import date
 import json
 import sys
+from typing import Any
 
 
 SCHEMA = "ptcg-replay/1"
 
 
-def fold_knockouts(events, evolved_from):
+def fold_knockouts(
+    events: list[dict[str, Any]], evolved_from: dict[str, set[str]]
+) -> list[dict[str, Any]]:
     """Drop knocked_out events for the pre-evolution cards of the KO just before.
 
     evolved_from maps a card name to the names it evolved from in this game
@@ -43,7 +46,7 @@ def fold_knockouts(events, evolved_from):
     return out
 
 
-def evolution_map(raw):
+def evolution_map(raw: dict[str, Any]) -> dict[str, set[str]]:
     pairs = {}
     events = [e for s in raw["steps"] for e in s["events"]] + raw["final_events"]
     for e in events:
@@ -52,7 +55,7 @@ def evolution_map(raw):
     return pairs
 
 
-def main():
+def main() -> None:
     raw = json.load(open(sys.argv[1]))
     evo = evolution_map(raw)
     turns = {}
