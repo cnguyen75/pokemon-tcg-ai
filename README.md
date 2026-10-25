@@ -24,7 +24,7 @@ python3 -m http.server -d docs/replay 8000   # then open http://localhost:8000
 
 ![Replay viewer: the search overrides the policy on turn 1](docs/replay/screenshot.png)
 
-## How it decides
+## How it works
 
 The submitted agent ([`baselines/v12_pwr/`](baselines/v12_pwr/), identical to the
 last build sent to Kaggle) is a scripted policy wrapped in a determinized
@@ -39,7 +39,7 @@ observation ──> archetype detection ──> per-matchup config
         retreat / attack / promote / …)
                         │
                         ▼
-        at pivotal decisions: up to 5 candidate first actions,
+        at key decisions: up to 5 candidate first actions,
         each followed by a beam search over the rest of the turn
         (width 4, top-3 expansion), then the opponent's reply,
         in up to 10 sampled worlds for the hidden cards
@@ -140,7 +140,7 @@ kept, so treat them as reported, not measured here.
 | `logs/`, `runs/` | Kept local evaluation logs |
 | `docs/replay/` | Replay viewer and the recorded game |
 
-## Running it
+## Run it
 
 **The competition engine and data are not included, and have been deleted.**
 The simulator, the card data and the match replays were licensed for
@@ -172,6 +172,22 @@ python3 tools/export_demo.py recording.json docs/replay/demo.json
 # redraw the figures from results/results.json (no engine needed)
 python3 tools/make_figures.py
 ```
+
+## Limitations and next steps
+
+- The competition engine, card data, and replays were licensed for competition use only and
+  have been deleted, so nothing here can play a game, and the ladder results cannot be
+  recomputed. The replay in `docs/replay/` is the one recorded game.
+- The agent is not deterministic. A 204-game local cell has a 95% interval of about ±6.8
+  points, so differences under about ten points are not resolved by the local screens.
+- Local opponents are other decks piloted by this agent's own framework, not the real ladder
+  players.
+- The "What didn't work" notes come from the competition period; the runs behind them were not
+  kept.
+- The value head's AUC numbers were chosen on the same held-out sets they are reported on, so
+  both are optimistic.
+- Without the Kaggle package there is no way to run or improve the agent from this clone;
+  redrawing the figures and viewing the replay are the only things that run.
 
 ## Licence
 
