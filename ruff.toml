@@ -1,0 +1,47 @@
+line-length = 100
+target-version = "py311"
+# Frozen submitted builds and archived experiments are kept as submitted.
+extend-exclude = ["baselines", "exp", "docs"]
+
+[lint]
+select = [
+    "E", "W", "F",      # pycodestyle, pyflakes
+    "I",                # import order: stdlib, third-party, local
+    "B",                # bugbear: mutable defaults, bare except via B001/E722
+    "ANN",              # type hints on every signature
+    "ARG",              # unused arguments
+    "PLR0913",          # too many parameters
+    "PLR2004",          # magic numbers
+    "C901",             # complexity
+    "T20",              # print statements
+    "ERA",              # commented-out code
+    "FBT",              # boolean flag parameters
+    "RET",              # return early / consistent returns
+    "SIM",              # simplify
+    "UP",               # modern syntax, X | None
+    "BLE",              # blind except Exception
+    "TRY",              # raise specific, no bare Exception
+]
+ignore = ["ANN401", "TRY003", "E501"]
+
+[lint.per-file-ignores]
+"tests/**" = ["PLR2004", "ANN", "ARG"]
+"test_*.py" = ["PLR2004", "ANN", "ARG"]
+# The tools are command-line reports; stdout is their output channel.
+"tools/**" = ["T20"]
+"train/**" = ["T20"]
+
+[lint.pylint]
+max-args = 4
+
+[lint.mccabe]
+max-complexity = 10
+
+[lint.isort]
+force-sort-within-sections = true
+lines-after-imports = 2
+
+[format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
