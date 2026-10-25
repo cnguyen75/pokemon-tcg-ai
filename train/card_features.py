@@ -48,10 +48,7 @@ _ZONES = ["my_hand", "my_board", "my_discard", "op_board", "op_discard"]
 
 
 def _g(o: Any, k: str, d: Any = None) -> Any:
-    if isinstance(o, dict):
-        v = o.get(k, d)
-    else:
-        v = getattr(o, k, d)
+    v = o.get(k, d) if isinstance(o, dict) else getattr(o, k, d)
     return d if v is None else v
 
 
@@ -65,7 +62,7 @@ def _cat_of(cid: int, CARD: dict[int, Any]) -> str:
     return "unknown"
 
 
-def _poke_ids_with_attach(ps: Any, CARD: dict[int, Any]) -> list[int]:
+def _poke_ids_with_attach(ps: Any, _CARD: dict[int, Any]) -> list[int]:
     """All revealed card ids on a player's board: pokemon + attached energy +
     tools + pre-evolution cards (active and bench)."""
     ids = []
@@ -122,13 +119,14 @@ def build_vocab(dirs: list[str], CARD: dict[int, Any], top_n: int = 300) -> list
         files += sorted(glob.glob(os.path.join(dpath, "*.json")))
     for path in files:
         try:
-            d = json.load(open(path))
+            with open(path) as fh:
+                d = json.load(fh)
         except Exception:
             continue
         if not isinstance(d, dict) or "steps" not in d:
             continue
         for step in d.get("steps", []):
-            for j, ag in enumerate(step):
+            for _j, ag in enumerate(step):
                 if ag.get("status") != "ACTIVE":
                     continue
                 obs = ag.get("observation") or {}
@@ -155,11 +153,10 @@ def make_index(vocab: list[int]) -> dict[int, int]:
     return {cid: i for i, cid in enumerate(vocab)}
 
 
-def card_feature_names(vocab: list[int], CARD: dict[int, Any]) -> list[str]:
+def card_feature_names(vocab: list[int], _CARD: dict[int, Any]) -> list[str]:
     names = []
     for z in _ZONES:
         for cid in vocab:
-            nm = _g(CARD.get(cid), "name", str(cid)) if CARD.get(cid) else str(cid)
             names.append(f"{z}#{cid}")
         for cat in _CAT_NAMES:
             names.append(f"{z}#other_{cat}")

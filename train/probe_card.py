@@ -58,7 +58,7 @@ def per_ep(yho: np.ndarray, p: np.ndarray, epho: np.ndarray) -> np.ndarray:
     for i, e in enumerate(epho):
         by.setdefault(e, []).append(i)
     vals = []
-    for e, idx in by.items():
+    for _e, idx in by.items():
         idx = np.asarray(idx)
         yy = yho[idx]
         if yy.min() != yy.max():

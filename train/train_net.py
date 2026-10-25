@@ -236,7 +236,7 @@ def main() -> None:
     # game, so within-game discrimination is the metric that matters most.
     def per_episode(scores: np.ndarray) -> np.ndarray:
         vals = []
-        for e, idx in by_ep.items():
+        for _e, idx in by_ep.items():
             yy = yho_e[idx]
             if yy.min() == yy.max():
                 continue
@@ -258,7 +258,7 @@ def main() -> None:
         for i, e in enumerate(ho_eps_s):
             by.setdefault(e, []).append(i)
         vals = []
-        for e, idx in by.items():
+        for _e, idx in by.items():
             idx = np.asarray(idx)
             yy = yho[idx]
             if yy.min() == yy.max():

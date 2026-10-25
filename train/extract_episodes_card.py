@@ -55,7 +55,8 @@ def parse_file(
     path: str,
 ) -> tuple[list[list[float]], list[list[float]], list[int], list[float]]:
     try:
-        d = json.load(open(path))
+        with open(path) as fh:
+            d = json.load(fh)
     except Exception:
         return [], [], [], []
     if not isinstance(d, dict) or "steps" not in d:

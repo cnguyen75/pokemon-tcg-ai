@@ -10,6 +10,7 @@ V1 design (see project plan):
 """
 
 from collections import Counter
+import contextlib
 import os
 import random
 import sys
@@ -340,7 +341,7 @@ def plan(obs: Observation, me: int, deadline: float) -> list[int]:
             if DEBUG:
                 import traceback
 
-                print(f"[agent] begin_world fail: {e!r}", file=sys.stderr)
+                print(f"[agent] begin_world fail: {e!r}", file=sys.stderr)  # noqa: T201
                 traceback.print_exc()
             break
         try:
@@ -352,17 +353,12 @@ def plan(obs: Observation, me: int, deadline: float) -> list[int]:
                 except Exception:
                     continue
                 cur = st.observation.current
-                if cur.result >= 0:
-                    v = eval_state(cur, me)
-                else:
-                    v = greedy_rollout(st, me)
+                v = eval_state(cur, me) if cur.result >= 0 else greedy_rollout(st, me)
                 scores[tuple(c)] += v
                 counts[tuple(c)] += 1
         finally:
-            try:
+            with contextlib.suppress(Exception):
                 search_end()
-            except Exception:
-                pass
     evaluated = [(scores[t] / counts[t], list(t)) for t in scores if counts[t] > 0]
     if not evaluated:
         return heuristic_choice(obs.select)

@@ -12,8 +12,9 @@ CARD_CSV = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "EN_Card_Data.csv"
 )
 names = {}
-for r in csv.DictReader(open(CARD_CSV)):
-    names.setdefault(int(r["Card ID"]), r["Card Name"])
+with open(CARD_CSV) as fh:
+    for r in csv.DictReader(fh):
+        names.setdefault(int(r["Card ID"]), r["Card Name"])
 
 
 def deck_key(deck: list[int]) -> tuple[int, ...]:
@@ -25,7 +26,8 @@ stats = defaultdict(lambda: [0, 0])  # key -> [wins, games]
 teams_by_deck = defaultdict(set)
 
 for f in glob.glob(sys.argv[1] + "/*.json"):
-    d = json.load(open(f))
+    with open(f) as fh:
+        d = json.load(fh)
     team = d["info"]["TeamNames"]
     rew = d["rewards"]
     deck_action = d["steps"][0][0]["visualize"][0]["action"]

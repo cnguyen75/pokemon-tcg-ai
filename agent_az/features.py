@@ -33,10 +33,7 @@ D_STATE = vf.N_NET_FEATURES  # 101
 
 
 def _g(o: Any, k: str, d: Any = None) -> Any:
-    if isinstance(o, dict):
-        v = o.get(k, d)
-    else:
-        v = getattr(o, k, d)
+    v = o.get(k, d) if isinstance(o, dict) else getattr(o, k, d)
     return d if v is None else v
 
 
@@ -46,7 +43,7 @@ def _card_at(
     area: AreaType | int,
     index: int,
     playerIndex: int | None,
-    CARD: dict[int, Any],
+    _CARD: dict[int, Any],
 ) -> Any:
     pi = playerIndex if playerIndex is not None else me
     try:

@@ -49,21 +49,22 @@ def main() -> None:
             outs = pool.map(play_games, jobs)
         rr = [r for rs, _ in outs for r in rs][:n]
         w = sum(1 for r in rr if r == 1)
-        l = sum(1 for r in rr if r == -1)
+        losses = sum(1 for r in rr if r == -1)
         d = sum(1 for r in rr if r == 0)
-        p, lo, hi = wilson(w, w + l)
-        res[opp] = {"w": w, "l": l, "d": d, "wr": p, "lo": lo, "hi": hi, "weight": wt}
+        p, lo, hi = wilson(w, w + losses)
+        res[opp] = {"w": w, "losses": losses, "d": d, "wr": p, "lo": lo, "hi": hi, "weight": wt}
         wsum += wt * p
         wtot += wt
         print(
-            f"{opp:18s} w={wt:.3f} {w}-{l}-{d} "
+            f"{opp:18s} w={wt:.3f} {w}-{losses}-{d} "
             f"WR {p * 100:5.1f}% [{lo * 100:.1f},{hi * 100:.1f}]  "
             f"({time.time() - t0:.0f}s)",
             flush=True,
         )
     meta = wsum / wtot
     res["_meta_wr"] = meta
-    json.dump(res, open(os.path.join(OUT, a.tag + ".json"), "w"), indent=1)
+    with open(os.path.join(OUT, a.tag + ".json"), "w") as fh:
+        json.dump(res, fh, indent=1)
     print(f"META-WEIGHTED WR: {meta * 100:.2f}%   ({time.time() - t0:.0f}s)", flush=True)
 
 

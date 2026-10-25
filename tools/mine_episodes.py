@@ -56,14 +56,16 @@ def main() -> int:
 
     # meta summary: deck archetypes by (top-3 non-trainer cards), win rates
     names = {}
-    for row in csv.DictReader(open(os.path.join(ROOT, "data", "EN_Card_Data.csv"))):
-        names.setdefault(int(row["Card ID"]), row["Card Name"])
+    with open(os.path.join(ROOT, "data", "EN_Card_Data.csv")) as fh:
+        for row in csv.DictReader(fh):
+            names.setdefault(int(row["Card ID"]), row["Card Name"])
     arch = defaultdict(lambda: [0, 0])
     for f in os.listdir(outdir):
         if not f.endswith(".json") or f == "meta_summary.json":
             continue
         try:
-            d = json.load(open(os.path.join(outdir, f)))
+            with open(os.path.join(outdir, f)) as fh:
+                d = json.load(fh)
             decks = d["steps"][0][0]["visualize"][0]["action"]
             rew = d["rewards"]
         except Exception:

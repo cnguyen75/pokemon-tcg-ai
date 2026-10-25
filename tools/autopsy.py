@@ -11,8 +11,9 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 names = {}
-for r in csv.DictReader(open(os.path.join(ROOT, "data", "EN_Card_Data.csv"))):
-    names.setdefault(int(r["Card ID"]), r["Card Name"])
+with open(os.path.join(ROOT, "data", "EN_Card_Data.csv")) as fh:
+    for r in csv.DictReader(fh):
+        names.setdefault(int(r["Card ID"]), r["Card Name"])
 attacks = {}  # attackId -> name filled lazily from cg if available
 
 
@@ -22,7 +23,8 @@ def nm(cid: int | None) -> str:
 
 def main() -> None:
     path = sys.argv[1]
-    d = json.load(open(path))
+    with open(path) as fh:
+        d = json.load(fh)
     teams = d["info"]["TeamNames"]
     rew = d["rewards"]
     print(f"{teams[0]} (r={rew[0]}) vs {teams[1]} (r={rew[1]})  steps={len(d['steps'])}")
@@ -62,7 +64,7 @@ def main() -> None:
         elif t == 8:
             print(f"  P{p} switch {nm(lg.get('cardIdActive'))} <-> {nm(lg.get('cardIdBench'))}")
         elif t == 6:
-            fa, ta = lg.get("fromArea"), lg.get("toArea")
+            fa = lg.get("fromArea")
             # 5=prize per AreaType? print prize takes only when to hand from prize
             if fa == 6:
                 prizes[p] += 1

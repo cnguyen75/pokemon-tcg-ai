@@ -20,8 +20,9 @@ from league import load_agent  # noqa: E402
 
 
 NAMES = {}
-for r in csv.DictReader(open(os.path.join(REPO, "data", "EN_Card_Data.csv"))):
-    NAMES.setdefault(int(r["Card ID"]), r["Card Name"])
+with open(os.path.join(REPO, "data", "EN_Card_Data.csv")) as fh:
+    for r in csv.DictReader(fh):
+        NAMES.setdefault(int(r["Card ID"]), r["Card Name"])
 
 POKE = {
     1031,

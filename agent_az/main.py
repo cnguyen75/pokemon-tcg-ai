@@ -24,6 +24,7 @@ Determinized PUCT-MCTS (IS-MCTS style):
   uv run --python 3.13 --with torch --with numpy python tools/gauntlet.py agent_az
 """
 
+import contextlib
 import math
 import os
 import sys
@@ -87,7 +88,6 @@ CARD = {c.cardId: c for c in all_card_data()}
 ATK = {a.attackId: a for a in all_attack()}
 
 import features as feats  # noqa: E402
-
 import numpy as np  # noqa: E402
 
 
@@ -173,7 +173,7 @@ def _scripted_choice(obs: Any) -> list[int]:
         return _fallback_choice(obs.select)
 
 
-def _advance_to_our_main(st: Any, me: int, root_turn: int, deadline: float) -> tuple[Any, str]:
+def _advance_to_our_main(st: Any, me: int, _root_turn: int, deadline: float) -> tuple[Any, str]:
     """From search state `st`, keep stepping with the scripted policy until we
     reach OUR MAIN pick, a turn advance past the rollout horizon, or terminal.
     Returns (st, kind) with kind in {'main','end','terminal','dead'}."""
@@ -201,7 +201,7 @@ def _advance_to_our_main(st: Any, me: int, root_turn: int, deadline: float) -> t
 def _simulate(
     root_obs: Any,
     me: int,
-    root_opts: list[Any],
+    _root_opts: list[Any],
     root_node: Node,
     tree: dict[tuple[int, ...], Node],
     deadline: float,
@@ -286,10 +286,8 @@ def mcts_run(obs: Any, me: int) -> tuple[Node, np.ndarray, int]:
             _simulate(obs, me, opts, root, tree, deadline)
             sims += 1
     finally:
-        try:
+        with contextlib.suppress(Exception):
             search_end()
-        except Exception:
-            pass
     _STATS["sims"] += sims
     _STATS["search_moves"] += 1
     return root, prior, sims

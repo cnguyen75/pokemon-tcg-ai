@@ -21,8 +21,9 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MY_TEAM = "Colin19"
 
 NAMES = {}
-for r in csv.DictReader(open(os.path.join(ROOT, "data", "EN_Card_Data.csv"))):
-    NAMES.setdefault(int(r["Card ID"]), r["Card Name"])
+with open(os.path.join(ROOT, "data", "EN_Card_Data.csv")) as fh:
+    for r in csv.DictReader(fh):
+        NAMES.setdefault(int(r["Card ID"]), r["Card Name"])
 
 
 def nm(cid: int) -> str:
@@ -43,7 +44,8 @@ def main() -> None:
     want = sys.argv[2] if len(sys.argv) > 2 else "L"
     for f in sorted(glob.glob(os.path.join(ROOT, "episodes", "mine", "episode-*-replay.json"))):
         try:
-            d = json.load(open(f))
+            with open(f) as fh:
+                d = json.load(fh)
             tn = d["info"]["TeamNames"]
             if MY_TEAM not in tn:
                 continue

@@ -77,10 +77,7 @@ _FULL_METAL_LAB = 1244
 
 
 def _g(o: Any, k: str, d: Any = None) -> Any:
-    if isinstance(o, dict):
-        v = o.get(k, d)
-    else:
-        v = getattr(o, k, d)
+    v = o.get(k, d) if isinstance(o, dict) else getattr(o, k, d)
     return d if v is None else v
 
 

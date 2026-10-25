@@ -96,7 +96,7 @@ def main() -> None:
     DATA = os.path.join(REPO, "train", "data")
 
     dp = np.load(os.path.join(DATA, "policy.npz"))
-    X_opt, X_state, offs, chosen, ep_p, dtype = (
+    X_opt, X_state, offs, chosen, ep_p, _dtype = (
         dp["X_opt"],
         dp["X_state"],
         dp["offs"],

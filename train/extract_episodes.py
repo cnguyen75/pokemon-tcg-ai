@@ -44,7 +44,7 @@ DIRS = glob.glob(os.path.join(REPO, "episodes", "daily", "*")) + [
 ]
 
 
-def parse_file(path: str, ep_id: int) -> tuple[list[list[float]], list[int], list[float]]:
+def parse_file(path: str, _ep_id: int) -> tuple[list[list[float]], list[int], list[float]]:
     try:
         with open(path) as f:
             d = json.load(f)

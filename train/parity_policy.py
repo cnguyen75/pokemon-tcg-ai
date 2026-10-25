@@ -18,7 +18,13 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(REPO, "agent2"))
 sys.path.insert(0, os.path.join(REPO, "train"))
 
-from cg.api import SelectContext, SelectType, all_attack, all_card_data, to_observation_class  # noqa: E402
+from cg.api import (  # noqa: E402
+    SelectContext,
+    SelectType,
+    all_attack,
+    all_card_data,
+    to_observation_class,
+)
 import extract_policy as ep  # noqa: E402
 import policy_net as pn  # noqa: E402
 import value_features as vf  # noqa: E402
@@ -37,7 +43,8 @@ n_dec = 0
 n_opt = 0
 for path in files:
     try:
-        d = json.load(open(path))
+        with open(path) as fh:
+            d = json.load(fh)
     except Exception:
         continue
     if not isinstance(d, dict) or "steps" not in d:
@@ -85,7 +92,7 @@ for path in files:
             state_maxdiff = max(
                 state_maxdiff, float(np.max(np.abs(np.array(tr_state) - np.array(inf_state))))
             )
-            for a, b in zip(tr_opts, inf_opts):
+            for a, b in zip(tr_opts, inf_opts, strict=False):
                 opt_maxdiff = max(opt_maxdiff, float(np.max(np.abs(np.array(a) - np.array(b)))))
                 n_opt += 1
             # end-to-end scores via inference path

@@ -114,13 +114,13 @@ def main() -> None:
     results = [r for rs, _ in outs for r in rs]
     n = len(results)
     w = sum(1 for r in results if r == 1)
-    l = sum(1 for r in results if r == -1)
-    d = n - w - l
-    p, lo, hi = wilson(w, w + l)
+    losses = sum(1 for r in results if r == -1)
+    d = n - w - losses
+    p, lo, hi = wilson(w, w + losses)
     dt = time.time() - t0
     print(
         f"{os.path.basename(args.agent_a)} vs {os.path.basename(args.agent_b)}: "
-        f"{w}W-{l}L-{d}D of {n}  winrate {p * 100:.1f}% "
+        f"{w}W-{losses}L-{d}D of {n}  winrate {p * 100:.1f}% "
         f"[{lo * 100:.1f}, {hi * 100:.1f}]  ({dt:.0f}s, {n / dt:.2f} games/s)"
     )
 

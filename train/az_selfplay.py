@@ -33,7 +33,6 @@ import argparse
 import importlib.util as _ilu
 from multiprocessing import Pool
 import os
-import random
 import sys
 import time
 from types import ModuleType
@@ -114,7 +113,6 @@ def play_worker(
     from cg.game import battle_finish, battle_select, battle_start
 
     _t_start = time.time()
-    rng = random.Random(seed)
     np_rng = np.random.RandomState(seed & 0x7FFFFFFF)
 
     to_obs = to_observation_class
@@ -224,7 +222,8 @@ def play_worker(
 
     # build outcome labels (1 if acting side won)
     ys = np.array(
-        [1 if gid_result.get(gid) == side else 0 for gid, side in zip(gids, sides)], dtype=np.int8
+        [1 if gid_result.get(gid) == side else 0 for gid, side in zip(gids, sides, strict=False)],
+        dtype=np.int8,
     )
     return (
         Xs,

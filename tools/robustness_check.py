@@ -14,7 +14,8 @@ sys.path.insert(0, CG_HOME)
 
 # exec the agent source with no __file__, from the agent dir (kaggle-style)
 os.chdir(AGENT)
-src = open(os.path.join(AGENT, "main.py"), encoding="utf-8").read()
+with open(os.path.join(AGENT, "main.py"), encoding="utf-8") as fh:
+    src = fh.read()
 ns = {"__name__": "__main__"}  # deliberately no __file__
 exec(compile(src, "<agent-exec>", "exec"), ns)
 agent_fn = ns["agent"]

@@ -56,27 +56,28 @@ def wilson(w: int, n: int, z: float = 1.96) -> list[float]:
 def local_screens() -> dict[str, Any]:
     cells = []
     for path in LOGS:
-        for i, line in enumerate(open(os.path.join(REPO, path)), 1):
-            m = CELL.match(line.strip())
-            if not m:
-                continue
-            a, b, w, l, pct, lo, hi, n = m.groups()
-            w, l, n = int(w), int(l), int(n)
-            ci = wilson(w, w + l)
-            cells.append(
-                {
-                    "source": f"{path}:{i}",
-                    "agent": a,
-                    "opponent": b,
-                    "wins": w,
-                    "losses": l,
-                    "games": n,
-                    "win_rate": round(100 * w / (w + l), 1),
-                    "ci95": ci,
-                    "logged_ci95": [float(lo), float(hi)],
-                    "ci_matches_log": ci == [float(lo), float(hi)],
-                }
-            )
+        with open(os.path.join(REPO, path)) as fh:
+            for i, line in enumerate(fh, 1):
+                m = CELL.match(line.strip())
+                if not m:
+                    continue
+                a, b, w, losses, pct, lo, hi, n = m.groups()
+                w, losses, n = int(w), int(losses), int(n)
+                ci = wilson(w, w + losses)
+                cells.append(
+                    {
+                        "source": f"{path}:{i}",
+                        "agent": a,
+                        "opponent": b,
+                        "wins": w,
+                        "losses": losses,
+                        "games": n,
+                        "win_rate": round(100 * w / (w + losses), 1),
+                        "ci95": ci,
+                        "logged_ci95": [float(lo), float(hi)],
+                        "ci_matches_log": ci == [float(lo), float(hi)],
+                    }
+                )
     repeats = defaultdict(list)
     for c in cells:
         repeats[(c["agent"], c["opponent"])].append(c["win_rate"])
@@ -91,7 +92,8 @@ def local_screens() -> dict[str, Any]:
 
 
 def ladder(sub_csv: str, lb_csv: str, team: str) -> dict[str, Any]:
-    rows = list(csv.DictReader(open(sub_csv)))
+    with open(sub_csv) as fh:
+        rows = list(csv.DictReader(fh))
     rows.sort(key=lambda r: r["date"])
     builds, every, copies = [], [], Counter()
     for r in rows:
@@ -138,10 +140,11 @@ def ladder(sub_csv: str, lb_csv: str, team: str) -> dict[str, Any]:
 
 def matchups(ep_dir: str, submission_ids: list[int]) -> dict[str, dict[str, Any]]:
     names, cat = {}, {}
-    for r in csv.DictReader(open(os.path.join(REPO, "data", "EN_Card_Data.csv"))):
-        cid = int(r["Card ID"])
-        names.setdefault(cid, r["Card Name"])
-        cat.setdefault(cid, r.get("Stage (Pokémon)/Type (Energy and Trainer)", ""))
+    with open(os.path.join(REPO, "data", "EN_Card_Data.csv")) as fh:
+        for r in csv.DictReader(fh):
+            cid = int(r["Card ID"])
+            names.setdefault(cid, r["Card Name"])
+            cat.setdefault(cid, r.get("Stage (Pokémon)/Type (Energy and Trainer)", ""))
 
     def archetype(deck: list[int]) -> str:  # same rule as tools/my_episodes.py
         poke = Counter(names.get(c, str(c)) for c in deck if "Pok" in cat.get(c, ""))
@@ -155,7 +158,8 @@ def matchups(ep_dir: str, submission_ids: list[int]) -> dict[str, dict[str, Any]
         cached[int(os.path.basename(f).split("-")[1])] = f
     out = {}
     for sid in submission_ids:
-        eps = json.load(open(os.path.join(ep_dir, f"ep_{sid}.json")))["episodes"]
+        with open(os.path.join(ep_dir, f"ep_{sid}.json")) as fh:
+            eps = json.load(fh)["episodes"]
         agg, used, total_w = defaultdict(lambda: [0, 0]), 0, 0
         for e in eps:
             us = next((a for a in e["agents"] if a.get("submissionId") == sid), None)
@@ -164,7 +168,8 @@ def matchups(ep_dir: str, submission_ids: list[int]) -> dict[str, dict[str, Any]
             total_w += us.get("reward") == 1
             if e["id"] not in cached:
                 continue
-            rp = json.load(open(cached[e["id"]]))
+            with open(cached[e["id"]]) as fh:
+                rp = json.load(fh)
             deck = rp["steps"][0][0]["visualize"][0]["action"][1 - us.get("index", 0)]
             a = archetype(deck)
             agg[a][1] += 1

@@ -40,6 +40,7 @@ SKIP_DIRS = {
     "docs",
     "logs",
     "runs",
+    "scratch_logs",
 }
 SKIP_FILES = {"CODING-RULES.md", "PROTOCOL.md"}
 FROZEN_PREFIXES = ("PREREG",)

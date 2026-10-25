@@ -16,6 +16,7 @@ Design:
 
 from collections import Counter
 from collections.abc import Collection, Iterable
+import contextlib
 import math
 import os
 import random
@@ -80,7 +81,8 @@ DECK = list(CFG["deck"])
 try:
     _dk = os.path.join(AGENT_DIR, "deck.csv")
     if os.path.isfile(_dk):
-        _cards = [int(x) for x in open(_dk).read().split() if x.strip()]
+        with open(_dk) as fh:
+            _cards = [int(x) for x in fh.read().split() if x.strip()]
         if len(_cards) == 60:
             DECK = _cards
 except Exception:
@@ -312,7 +314,7 @@ if VALUE_NET_ON:
     if not VN_OK:
         # loud (once) so local runs don't silently measure the wrong agent:
         # league runs need `uv run --python 3.13 --with numpy ...`
-        print(
+        print(  # noqa: T201
             "[a2] WARNING value net requested but unavailable "
             "(numpy/value_net.npz); falling back to handcrafted eval",
             file=sys.stderr,
@@ -741,13 +743,16 @@ class Policy:
                 else:
                     # a middle stage: bottleneck when base in play + top in hand
                     for top, pr in self.cfg["evo_top"].items():
-                        if len(pr) > 1 and pr[1] == cid:
-                            if (
+                        if (
+                            len(pr) > 1
+                            and pr[1] == cid
+                            and (
                                 self.field_counts.get(pr[0], 0)
                                 and self.hand_counts.get(top, 0)
                                 and not self.hand_counts.get(1079, 0)
-                            ):
-                                s += 65
+                            )
+                        ):
+                            s += 65
         elif d.cardType in ENERGY_TYPES:
             plan = _G["plan"]
             if plan.needs_energy == cid:
@@ -768,12 +773,16 @@ class Policy:
         if cid == 1079:  # Rare Candy: gold when a stage-2 jump is brewing
             for top, pres in self.cfg["evo_top"].items():
                 td = CARD.get(top)
-                if td is not None and td.stage2 and pres:
-                    if any(p is not None and p.id == pres[0] for p in self.my_board):
-                        if self.hand_counts.get(top, 0):
-                            s += 65
-                        elif self.copies_in_deck(top):
-                            s += 30
+                if (
+                    td is not None
+                    and td.stage2
+                    and pres
+                    and any(p is not None and p.id == pres[0] for p in self.my_board)
+                ):
+                    if self.hand_counts.get(top, 0):
+                        s += 65
+                    elif self.copies_in_deck(top):
+                        s += 30
         if cid == 1086 and self.line_count(next(iter(self.cfg["bench_cap"]), 0)) < 2:
             s += 25  # board is thin: basics fetcher gains value
         if cid == BOSS and _G["plan"].needs_gust:
@@ -994,13 +1003,12 @@ class Policy:
                 CARD.get(i) is not None and CARD[i].cardType in ENERGY_TYPES
                 for i in self.hand_counts
                 if self.hand_counts[i] > 0
+            ) and any(
+                self.copies_in_deck(i) > 0
+                for i in DECK_TOTAL
+                if CARD.get(i) is not None and CARD[i].cardType in ENERGY_TYPES
             ):
-                if any(
-                    self.copies_in_deck(i) > 0
-                    for i in DECK_TOTAL
-                    if CARD.get(i) is not None and CARD[i].cardType in ENERGY_TYPES
-                ):
-                    return 8600
+                return 8600
             return 5800
         if cid == 1219:  # Petrel: fetch any trainer
             best = max(
@@ -1975,10 +1983,8 @@ def verify_win(obs: Observation, me: int, worlds: int = 3, budget: float = 1.2) 
                     break
             wins += 1 if ok else 0
     finally:
-        try:
+        with contextlib.suppress(Exception):
             search_end()
-        except Exception:
-            pass
     return tried == 0 or wins * 2 >= tried
 
 
@@ -2084,7 +2090,7 @@ def rollout_value(
     return eval_world(st.observation.current, me, base_my_pr, base_op_pr)
 
 
-def _beam_kind(st: Any, me: int, start_turn: int) -> str:
+def _beam_kind(st: Any, _me: int, start_turn: int) -> str:
     """Classify a beam node: 'live' (our turn continues, expand it),
     'endturn' (turn passed to opp), 'coin' (our coin flip -> hand to the
     expectimax rollout), 'result' (game over), 'dead' (no options)."""
@@ -2251,10 +2257,8 @@ def det_search(pol: Policy, cands: list[int]) -> int | None:
             n_worlds += 1
             _S["worlds"] += 1
     finally:
-        try:
+        with contextlib.suppress(Exception):
             search_end()
-        except Exception:
-            pass
     dt = time.time() - t0
     _S["t"] += dt
     _G["search_t"] += dt
@@ -2305,7 +2309,7 @@ def _game_reset() -> None:
     if DEBUG and _S["moves"]:
         n = max(_S["searches"], 1)
         lines = max(_S["lines"], 1)
-        print(
+        print(  # noqa: T201
             f"[a2] searches={_S['searches']} t={_S['t']:.2f}s "
             f"({_S['t'] / n:.3f}s/ea) worlds={_S['worlds']} "
             f"cands={_S['cands']} nodes={_S['nodes']} "

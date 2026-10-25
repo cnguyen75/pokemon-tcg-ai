@@ -52,7 +52,8 @@ def main() -> None:
     }
     if os.path.exists(out_path):
         try:
-            prev = json.load(open(out_path))
+            with open(out_path) as fh:
+                prev = json.load(fh)
             if prev.get("agent") == target:
                 state = prev
         except Exception:
@@ -84,7 +85,8 @@ def main() -> None:
             o["l"] += sum(1 for r in results if r == -1)
             o["d"] += sum(1 for r in results if r == 0)
             state["elapsed"] = time.time() - t0
-            json.dump(state, open(out_path, "w"), indent=1)
+            with open(out_path, "w") as fh:
+                json.dump(state, fh, indent=1)
             tot = sum(x["w"] + x["l"] + x["d"] for x in state["opps"].values())
             print(
                 f"[{args.tag}] {opp:18s} "
@@ -108,7 +110,8 @@ def main() -> None:
         )
     meta = wsum / wtot if wtot else 0.0
     state["meta_wr"] = meta
-    json.dump(state, open(out_path, "w"), indent=1)
+    with open(out_path, "w") as fh:
+        json.dump(state, fh, indent=1)
     print(f"META-WEIGHTED WR: {meta * 100:.2f}%  ({state.get('elapsed', 0):.0f}s)", flush=True)
 
 

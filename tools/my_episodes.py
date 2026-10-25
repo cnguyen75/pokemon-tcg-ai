@@ -23,12 +23,13 @@ API = "https://www.kaggle.com/api/i/competitions.EpisodeService"
 
 NAMES = {}
 CATEGORY = {}
-for r in csv.DictReader(open(os.path.join(ROOT, "data", "EN_Card_Data.csv"))):
-    cid = int(r["Card ID"])
-    NAMES.setdefault(cid, r["Card Name"])
-    # Pokémon are identified by the Stage column ("Basic Pokémon", "Stage 1
-    # Pokémon", ...); the Category column is n/a for them
-    CATEGORY.setdefault(cid, r.get("Stage (Pokémon)/Type (Energy and Trainer)", ""))
+with open(os.path.join(ROOT, "data", "EN_Card_Data.csv")) as fh:
+    for r in csv.DictReader(fh):
+        cid = int(r["Card ID"])
+        NAMES.setdefault(cid, r["Card Name"])
+        # Pokémon are identified by the Stage column ("Basic Pokémon", "Stage 1
+        # Pokémon", ...); the Category column is n/a for them
+        CATEGORY.setdefault(cid, r.get("Stage (Pokémon)/Type (Energy and Trainer)", ""))
 
 
 def _post(path: str, body: dict[str, Any]) -> dict[str, Any]:
@@ -94,7 +95,8 @@ def main() -> None:
                     timeout=120,
                 )
                 time.sleep(0.4)
-            d = json.load(open(cache_f))
+            with open(cache_f) as fh:
+                d = json.load(fh)
             deck_action = d["steps"][0][0]["visualize"][0]["action"]
             opp_deck = deck_action[1 - my_idx]
         except Exception:

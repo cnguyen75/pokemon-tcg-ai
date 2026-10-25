@@ -136,7 +136,7 @@ def report(
     per_ep = {}
     for name, s in preds.items():
         keys, vals = per_episode_aucs(epf, yf, s)
-        per_ep[name] = dict(zip(keys.tolist(), vals.tolist()))
+        per_ep[name] = dict(zip(keys.tolist(), vals.tolist(), strict=False))
         print(
             f"{name:18s} overall auc {auc(yf, s):.4f}  "
             f"per-episode auc {vals.mean():.4f} (n={len(vals)})"

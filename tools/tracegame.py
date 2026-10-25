@@ -18,11 +18,13 @@ from league import load_agent  # noqa: E402
 
 
 NAMES = {}
-for r in csv.DictReader(open(os.path.join(REPO, "data", "EN_Card_Data.csv"))):
-    NAMES.setdefault(int(r["Card ID"]), r["Card Name"])
+with open(os.path.join(REPO, "data", "EN_Card_Data.csv")) as fh:
+    for r in csv.DictReader(fh):
+        NAMES.setdefault(int(r["Card ID"]), r["Card Name"])
 ATTACKS = {}
-for r in csv.DictReader(open(os.path.join(REPO, "data", "EN_Card_Data.csv"))):
-    pass
+with open(os.path.join(REPO, "data", "EN_Card_Data.csv")) as fh:
+    for _r in csv.DictReader(fh):
+        pass
 
 
 def nm(cid: int | None) -> str:
@@ -100,7 +102,8 @@ def main() -> None:
         if r != 2 and won == show_wins:
             shown += 1
             print(
-                f"\n############ game {g} (A seat {a_index}, A {'WON' if won else 'LOST'}) ############"
+                f"\n############ game {g} (A seat {a_index}, "
+                f"A {'WON' if won else 'LOST'}) ############"
             )
             tell(logs, a_index)
 

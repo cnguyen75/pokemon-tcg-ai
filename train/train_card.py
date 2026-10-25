@@ -184,7 +184,7 @@ def main() -> None:
         seen = {}
         for i, e in enumerate(ep[va]):
             seen.setdefault(e, []).append(i)
-        for e, idx in seen.items():
+        for _e, idx in seen.items():
             idx = np.asarray(idx)
             yy = y[va][idx]
             if yy.min() == yy.max():
@@ -215,7 +215,7 @@ def main() -> None:
     # (b) BASE net (control: same data & split, base features only). Sweep too.
     print("\n--- training BASE net (control, base only): reg sweep ---")
     bbest = None
-    for arch, dp, wd in [
+    for arch, dp, _wd in [
         ([64, 32], 0.15, 3e-4),
         ([128, 64], 0.2, 3e-4),
         ([256, 128, 64], 0.25, 3e-4),
@@ -228,7 +228,7 @@ def main() -> None:
         if bbest is None or vscore > bbest[0]:
             bbest = (vscore, m, mn, sd, pr, tag)
     print(f"  SELECTED base config: {bbest[5]} (per-ep val {bbest[0]:.4f})")
-    bm, bmean, bstd, bpred = bbest[1], bbest[2], bbest[3], bbest[4]
+    bmean, bstd, bpred = bbest[2], bbest[3], bbest[4]
     p_base = bpred(((Xbase[ho] - bmean) / bstd).astype(np.float32))
 
     # (c) shipped net, (d) handcrafted
@@ -325,7 +325,8 @@ def main() -> None:
     states = []
     for path in sorted(glob.glob(os.path.join(REPO, "episodes", "v6games", "*.json")))[:5]:
         try:
-            dd = json.load(open(path))
+            with open(path) as fh:
+                dd = json.load(fh)
         except Exception:
             continue
         for step in dd.get("steps", []):

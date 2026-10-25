@@ -156,7 +156,7 @@ def play_worker(
             n_draw += 1
             continue
         gid = seed * 100_000 + g
-        for x, h, me in zip(gX, ghc, gme):
+        for x, h, me in zip(gX, ghc, gme, strict=False):
             Xs.append(x)
             ys.append(1 if me == r else 0)
             eps.append(gid)

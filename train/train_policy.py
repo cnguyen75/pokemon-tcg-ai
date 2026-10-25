@@ -125,7 +125,6 @@ def main() -> None:
 
     net = Net(D).to(dev)
     opt = torch.optim.Adam(net.parameters(), lr=2e-3, weight_decay=1e-5)
-    NEG = -1e9
 
     def scores_masked(X: torch.Tensor, Mk: torch.Tensor) -> torch.Tensor:
         s = net(X)  # (N, M)

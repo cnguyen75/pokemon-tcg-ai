@@ -20,10 +20,11 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MY_TEAM = "Colin19"
 
 NAMES, CAT = {}, {}
-for r in csv.DictReader(open(os.path.join(ROOT, "data", "EN_Card_Data.csv"))):
-    cid = int(r["Card ID"])
-    NAMES.setdefault(cid, r["Card Name"])
-    CAT.setdefault(cid, r.get("Stage (Pokémon)/Type (Energy and Trainer)", ""))
+with open(os.path.join(ROOT, "data", "EN_Card_Data.csv")) as fh:
+    for r in csv.DictReader(fh):
+        cid = int(r["Card ID"])
+        NAMES.setdefault(cid, r["Card Name"])
+        CAT.setdefault(cid, r.get("Stage (Pokémon)/Type (Energy and Trainer)", ""))
 
 
 def nm(cid: int) -> str:
@@ -45,7 +46,8 @@ def main() -> None:
     games = {"W": 0, "L": 0}
     for f in glob.glob(os.path.join(ROOT, "episodes", "mine", "episode-*-replay.json")):
         try:
-            d = json.load(open(f))
+            with open(f) as fh:
+                d = json.load(fh)
             tn = d["info"]["TeamNames"]
             if MY_TEAM not in tn:
                 continue
@@ -61,7 +63,6 @@ def main() -> None:
         c = agg[res]
         logs = game_logs(d, my)
         turn = 0
-        my_hand_est = 0
         for lg in logs:
             t, p = lg.get("type"), lg.get("playerIndex")
             side = "my" if p == my else "op"

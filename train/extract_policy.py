@@ -56,10 +56,7 @@ N_OPT_TYPES = 17  # OptionType enum size
 
 
 def _g(o: Any, k: str, d: Any = None) -> Any:
-    if isinstance(o, dict):
-        v = o.get(k, d)
-    else:
-        v = getattr(o, k, d)
+    v = o.get(k, d) if isinstance(o, dict) else getattr(o, k, d)
     return d if v is None else v
 
 
@@ -171,10 +168,11 @@ D_OPT = 38
 
 
 def parse_file(
-    path: str, ep_id: int
+    path: str, _ep_id: int
 ) -> list[tuple[list[float], list[list[float]], int, list[float], int]] | None:
     try:
-        d = json.load(open(path))
+        with open(path) as fh:
+            d = json.load(fh)
     except Exception:
         return None
     if not isinstance(d, dict) or "steps" not in d:

@@ -56,7 +56,8 @@ def evolution_map(raw: dict[str, Any]) -> dict[str, set[str]]:
 
 
 def main() -> None:
-    raw = json.load(open(sys.argv[1]))
+    with open(sys.argv[1]) as fh:
+        raw = json.load(fh)
     evo = evolution_map(raw)
     turns = {}
     for s in raw["steps"]:

@@ -260,7 +260,8 @@ def noise_svg(res: dict[str, Any]) -> str:
 
 
 def main() -> None:
-    res = json.load(open(os.path.join(REPO, "results", "results.json")))
+    with open(os.path.join(REPO, "results", "results.json")) as fh:
+        res = json.load(fh)
     os.makedirs(os.path.join(REPO, "figures"), exist_ok=True)
     for name, svg in (("ladder", ladder_svg(res)), ("noise", noise_svg(res))):
         with open(os.path.join(REPO, "figures", f"{name}.svg"), "w") as f:

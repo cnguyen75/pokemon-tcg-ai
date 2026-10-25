@@ -105,9 +105,9 @@ def run_matchup(
         outs = pool.map(play_games, jobs)
     results = [r for rs, _ in outs for r in rs]
     w = sum(1 for r in results if r == 1)
-    l = sum(1 for r in results if r == -1)
-    d = len(results) - w - l
-    return w, l, d
+    losses = sum(1 for r in results if r == -1)
+    d = len(results) - w - losses
+    return w, losses, d
 
 
 def main() -> None:
@@ -130,14 +130,14 @@ def main() -> None:
     for opp, (opp_dir, weight) in PANEL.items():
         # per-opponent seed offset keeps matchups independent
         sb = args.seed_base + hash(opp) % 1000
-        w, l, d = run_matchup(target, opp_dir, args.games_per, args.procs, sb)
-        n_dec = w + l
+        w, losses, d = run_matchup(target, opp_dir, args.games_per, args.procs, sb)
+        n_dec = w + losses
         p, lo, hi = wilson(w, n_dec)
-        rows.append((opp, weight, w, l, d, p, lo, hi))
+        rows.append((opp, weight, w, losses, d, p, lo, hi))
         weighted_sum += weight * p
         total_w += weight
         print(
-            f"{opp:18s} {weight:6.3f} {f'{w}-{l}-{d}':>12s} "
+            f"{opp:18s} {weight:6.3f} {f'{w}-{losses}-{d}':>12s} "
             f"{p * 100:6.1f} {f'[{lo * 100:.1f},{hi * 100:.1f}]':>16s}",
             flush=True,
         )

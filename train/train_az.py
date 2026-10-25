@@ -188,7 +188,6 @@ def main() -> None:
         net.train()
         rng.shuffle(idx_p)
         rng.shuffle(idx_v)
-        # iterate over policy batches; draw a value minibatch alongside each
         pol_loss = val_loss = 0.0
         nb = 0
         n_vbatch = max(1, Nv // B)

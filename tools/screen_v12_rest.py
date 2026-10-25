@@ -58,11 +58,11 @@ def main() -> None:
                 outs = pool.map(play_games, jobs)
             res = [r for rs, _ in outs for r in rs]
             w = sum(r == 1 for r in res)
-            l = sum(r == -1 for r in res)
-            _, lo, hi = wilson(w, w + l)
+            losses = sum(r == -1 for r in res)
+            _, lo, hi = wilson(w, w + losses)
             print(
-                f"{aname:5s} vs {oname:10s}: {w}-{l} "
-                f"({100 * w / max(w + l, 1):.1f}%) "
+                f"{aname:5s} vs {oname:10s}: {w}-{losses} "
+                f"({100 * w / max(w + losses, 1):.1f}%) "
                 f"CI[{100 * lo:.1f},{100 * hi:.1f}]  "
                 f"{len(res)}g {time.time() - t0:.0f}s",
                 flush=True,
