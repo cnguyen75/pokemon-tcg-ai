@@ -1,7 +1,8 @@
 line-length = 100
 target-version = "py311"
+# ruff format rewrites code blocks inside Markdown; prose is not its job.
 # Frozen submitted builds and archived experiments are kept as submitted.
-extend-exclude = ["baselines", "exp", "docs"]
+extend-exclude = ["baselines", "exp", "docs", "*.md"]
 
 [lint]
 select = [
