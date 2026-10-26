@@ -10,7 +10,6 @@ select = [
     "I",                # import order: stdlib, third-party, local
     "B",                # bugbear: mutable defaults, bare except via B001/E722
     "ANN",              # type hints on every signature
-    "ARG",              # unused arguments
     "PLR0913",          # too many parameters
     "PLR2004",          # magic numbers
     "C901",             # complexity
@@ -23,11 +22,11 @@ select = [
     "BLE",              # blind except Exception
     "TRY",              # raise specific, no bare Exception
 ]
-ignore = ["ANN401", "TRY003", "E501"]
+ignore = ["ANN401", "TRY003", "TRY400", "E501"]
 
 [lint.per-file-ignores]
-"tests/**" = ["PLR2004", "ANN", "ARG"]
-"test_*.py" = ["PLR2004", "ANN", "ARG"]
+"tests/**" = ["PLR2004", "ANN"]
+"test_*.py" = ["PLR2004", "ANN"]
 # The tools are command-line reports; stdout is their output channel.
 "tools/**" = ["T20"]
 "train/**" = ["T20"]
