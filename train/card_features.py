@@ -62,7 +62,7 @@ def _cat_of(cid: int, CARD: dict[int, Any]) -> str:
     return "unknown"
 
 
-def _poke_ids_with_attach(ps: Any, _CARD: dict[int, Any]) -> list[int]:
+def _poke_ids_with_attach(ps: Any, CARD: dict[int, Any]) -> list[int]:
     """All revealed card ids on a player's board: pokemon + attached energy +
     tools + pre-evolution cards (active and bench)."""
     ids = []
@@ -153,7 +153,7 @@ def make_index(vocab: list[int]) -> dict[int, int]:
     return {cid: i for i, cid in enumerate(vocab)}
 
 
-def card_feature_names(vocab: list[int], _CARD: dict[int, Any]) -> list[str]:
+def card_feature_names(vocab: list[int], CARD: dict[int, Any]) -> list[str]:
     names = []
     for z in _ZONES:
         for cid in vocab:

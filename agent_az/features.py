@@ -43,7 +43,7 @@ def _card_at(
     area: AreaType | int,
     index: int,
     playerIndex: int | None,
-    _CARD: dict[int, Any],
+    CARD: dict[int, Any],
 ) -> Any:
     pi = playerIndex if playerIndex is not None else me
     try:

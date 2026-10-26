@@ -24,6 +24,8 @@ Determinized PUCT-MCTS (IS-MCTS style):
   uv run --python 3.13 --with torch --with numpy python tools/gauntlet.py agent_az
 """
 
+from __future__ import annotations
+
 import contextlib
 import math
 import os
@@ -173,7 +175,7 @@ def _scripted_choice(obs: Any) -> list[int]:
         return _fallback_choice(obs.select)
 
 
-def _advance_to_our_main(st: Any, me: int, _root_turn: int, deadline: float) -> tuple[Any, str]:
+def _advance_to_our_main(st: Any, me: int, root_turn: int, deadline: float) -> tuple[Any, str]:
     """From search state `st`, keep stepping with the scripted policy until we
     reach OUR MAIN pick, a turn advance past the rollout horizon, or terminal.
     Returns (st, kind) with kind in {'main','end','terminal','dead'}."""
@@ -201,7 +203,7 @@ def _advance_to_our_main(st: Any, me: int, _root_turn: int, deadline: float) -> 
 def _simulate(
     root_obs: Any,
     me: int,
-    _root_opts: list[Any],
+    root_opts: list[Any],
     root_node: Node,
     tree: dict[tuple[int, ...], Node],
     deadline: float,

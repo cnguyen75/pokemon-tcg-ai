@@ -168,7 +168,7 @@ D_OPT = 38
 
 
 def parse_file(
-    path: str, _ep_id: int
+    path: str, ep_id: int
 ) -> list[tuple[list[float], list[list[float]], int, list[float], int]] | None:
     try:
         with open(path) as fh:

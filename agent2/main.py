@@ -14,6 +14,8 @@ Design:
 - Robustness: full try/except, per-move deadline, panic mode on low overage.
 """
 
+from __future__ import annotations
+
 from collections import Counter
 from collections.abc import Collection, Iterable
 import contextlib
@@ -2090,7 +2092,7 @@ def rollout_value(
     return eval_world(st.observation.current, me, base_my_pr, base_op_pr)
 
 
-def _beam_kind(st: Any, _me: int, start_turn: int) -> str:
+def _beam_kind(st: Any, me: int, start_turn: int) -> str:
     """Classify a beam node: 'live' (our turn continues, expand it),
     'endturn' (turn passed to opp), 'coin' (our coin flip -> hand to the
     expectimax rollout), 'result' (game over), 'dead' (no options)."""
